@@ -67,8 +67,6 @@ object Range {
   val empty = Range(0, 0)
 }
 
-case class Token(symbol: Terminal, text: String, range: Range)
-
 sealed trait Tree {
   def value: Any
   def range: Range

@@ -1,4 +1,4 @@
-package lrk.util
+package lrk.internal
 
 import scala.reflect.ClassTag
 

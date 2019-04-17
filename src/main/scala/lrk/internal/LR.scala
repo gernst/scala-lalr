@@ -1,8 +1,35 @@
-package lrk
+package lrk.internal
 
 import scala.collection.mutable
 
-import lrk.util.Stack
+import lrk.Leaf
+import lrk.Node
+import lrk.Parser
+import lrk.Range
+import lrk.Token
+import lrk.Tree
+import lrk.WithRules
+
+sealed trait Action
+
+case object Accept extends Action {
+  override def toString = "accept"
+}
+
+case object Reject extends Action {
+  override def toString = "reject"
+}
+
+case class Shift(next: State) extends Action {
+  override def toString = "shift " + next.number
+}
+
+case class Reduce(rule: Rule) extends Action {
+  override def toString = "reduce " + rule
+}
+
+case class Table(action: Terminal => Action, goto: NonTerminal => State) {
+}
 
 object LR {
   def translate(init: Parser[_]): Grammar = {

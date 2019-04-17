@@ -1,6 +1,6 @@
-package lrk
+package lrk.internal
 
-import lrk.util.Digraph
+import scala.annotation.migration
 
 sealed trait Symbol
 

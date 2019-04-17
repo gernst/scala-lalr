@@ -3,6 +3,7 @@ package lrk.test
 import scala.language.postfixOps
 
 import lrk._
+import lrk.internal.LR
 
 object parser {
   sealed trait Expr
@@ -18,7 +19,7 @@ object parser {
   val expr: Parser[Expr] = P(many | X(x) | Y(y))
   val many = Many(lparen ~ (expr *) ~ rparen)
 
-  def main(args: Array[String]) {
+  def debug() {
     val grammar = LR.translate(expr)
     val (init, states) = LR.states(grammar)
     println()
@@ -31,13 +32,15 @@ object parser {
     for (state <- sorted) {
       println(state.dump)
     }
+  }
 
+  def main(args: Array[String]) {
     val inputs = Seq(
       Seq(Token(x, "x", Range(0, 1))),
       Seq(Token(lparen, "(", Range(0, 1)), Token(x, "x", Range(1, 1)), Token(y, "y", Range(2, 1)), Token(rparen, ")", Range(3, 1))))
 
     for (input <- inputs) {
-      val result = LR.parse(input, init, true)
+      val result = expr.parse(input)
       println("input:  " + input.mkString(" "))
       println("result: " + result)
       println()

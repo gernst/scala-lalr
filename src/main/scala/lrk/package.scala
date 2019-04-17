@@ -1,14 +1,6 @@
 import scala.language.implicitConversions
 
 package object lrk {
-  def id[A](a: A): A = a
-
-  implicit class SetOps[A](self: Set[A]) {
-    def disjoint(that: Set[A]) = {
-      (self & that).isEmpty
-    }
-  }
-
   def P[A](parser: => Parser[A])(implicit name: sourcecode.Name) = {
     Parser.named(name.value, () => parser)
   }

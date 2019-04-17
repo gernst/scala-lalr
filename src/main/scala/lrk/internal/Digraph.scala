@@ -1,4 +1,4 @@
-package lrk.util
+package lrk.internal
 
 /* Frank DeRemer and Thomas Pennello:
  * Efficient computation of LALR (1) look-ahead sets.

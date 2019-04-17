@@ -1,7 +1,11 @@
 package lrk
 
-import scala.collection.mutable
-import lrk.util.Stack
+import lrk.internal.NonTerminal
+import lrk.internal.Rule
+import lrk.internal.Symbol
+import lrk.internal.Terminal
+import lrk.internal.State
+import lrk.internal.LR
 
 sealed trait Parseable {
   def normalize: List[List[Atomic]]
@@ -14,6 +18,18 @@ sealed trait Recognizer extends Parseable {
 sealed trait Parser[+A] extends Parseable {
   def |[B >: A](that: Parser[B]): Parser[B] = Parser.choice(this, that)
   def *(): Parser[List[A]] = Parser.rec("(" + this + ")*", (ps: Parser[List[A]]) => $(Nil) | this :: ps)
+
+  lazy val (init, states) = {
+    LR.states(LR.translate(this))
+  }
+
+  def parse(in: Iterable[Token]): A = {
+    LR.parse(in, init, false).asInstanceOf[A]
+  }
+
+  def parseTree(in: Iterable[Token]): Node = {
+    LR.parse(in, init, true).asInstanceOf[Node]
+  }
 }
 
 sealed trait Atomic extends Parseable {
