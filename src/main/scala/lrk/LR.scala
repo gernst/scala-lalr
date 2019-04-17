@@ -4,8 +4,6 @@ import scala.collection.mutable
 
 import lrk.util.Stack
 
-case class Token(symbol: Terminal, text: String)
-
 object LR {
   def translate(init: Parser[_]): Grammar = {
     val rules = mutable.ListBuffer[Rule]()
@@ -83,24 +81,22 @@ object LR {
     (init, states)
   }
 
-  def reduce(a: Stack[Any], rindex: List[Int], apply: Any) = (rindex, apply) match {
+  def reduce(a: Int => Any, rindex: List[Int], apply: Any) = (rindex, apply) match {
     case (List(), f: Any) => f
-    case (List(i0), f: Function1[Any, Any] @unchecked) =>
-      val a0 = a(i0)
-      f(a(i0))
-    case (List(i0, i1), f: Function2[Any, Any, Any] @unchecked) =>
-      val a0 = a(i0)
-      val a1 = a(i1)
-      f(a(i0), a(i1))
+    case (List(i0), f: Function1[Any, Any] @unchecked) => f(a(i0))
+    case (List(i0, i1), f: Function2[Any, Any, Any] @unchecked) => f(a(i0), a(i1))
     case (List(i0, i1, i2), f: Function3[Any, Any, Any, Any] @unchecked) => f(a(i0), a(i1), a(i2))
   }
 
-  def parse(in: Iterable[Token], init: State): Any = {
+  def parse(in: Iterable[Token], init: State, annotate: Boolean = false): Any = {
     val states = new Stack[State]()
     val results = new Stack[Any]()
 
     val iter = in.iterator
-    def next() = if (iter.hasNext) iter.next else Token(End, null)
+    var pos = 0
+    def unpack(n: Int) = results(n).asInstanceOf[Tree].value
+    def get(n: Int) = if (annotate) unpack(n) else results(n)
+    def next() = if (iter.hasNext) iter.next else Token(End, null, Range(pos, 0))
     var token = next()
 
     states push init
@@ -122,7 +118,17 @@ object LR {
 
         case Shift(state) =>
           // println("shift " + token)
-          results push token.text
+          val result = token.text
+
+          val value = if (annotate) {
+            val range = token.range
+            pos = range.end
+            Leaf(result, range)
+          } else {
+            result
+          }
+
+          results push value
           states push state
           token = next()
 
@@ -130,7 +136,15 @@ object LR {
           val arity = rule.rhs.length
           // println("reduce " + rule)
           assert(rule.rindex forall (_ < arity))
-          val res = reduce(results, rule.rindex, rule.apply) // rule apply args.reverse
+
+          val result = reduce(get, rule.rindex, rule.apply)
+
+          val value = if (annotate) {
+            val args = List.tabulate(arity)(i => results(arity - 1 - i).asInstanceOf[Tree])
+            Node(result, args)
+          } else {
+            result
+          }
 
           states drop arity
           results drop arity
@@ -138,7 +152,7 @@ object LR {
           val next = states.top.table goto rule.lhs
 
           states push next
-          results push res
+          results push value
       }
     }
   }

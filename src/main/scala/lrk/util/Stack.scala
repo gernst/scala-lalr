@@ -6,7 +6,7 @@ object Stack {
   val minimalSize = 4
 }
 
-class Stack[A: ClassTag]() {
+class Stack[A: ClassTag]() extends (Int => A) {
   var stack = new Array[A](Stack.minimalSize)
 
   var end = 0

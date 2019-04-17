@@ -7,13 +7,15 @@ import lrk._
 object parser {
   sealed trait Expr
   case object X extends Expr
+  case object Y extends Expr
   case class Many(es: List[Expr]) extends Expr
 
   val lparen = Recognizer.literal("(")
   val rparen = Recognizer.literal(")")
   val x = Recognizer.literal("x")
+  val y = Recognizer.literal("y")
 
-  val expr: Parser[Expr] = P(many | X(x))
+  val expr: Parser[Expr] = P(many | X(x) | Y(y))
   val many = Many(lparen ~ (expr *) ~ rparen)
 
   def main(args: Array[String]) {
@@ -31,11 +33,11 @@ object parser {
     }
 
     val inputs = Seq(
-      Seq(Token(x, "x")),
-      Seq(Token(lparen, "("), Token(x, "x"), Token(rparen, ")")))
+      Seq(Token(x, "x", Range(0, 1))),
+      Seq(Token(lparen, "(", Range(0, 1)), Token(x, "x", Range(1, 1)), Token(y, "y", Range(2, 1)), Token(rparen, ")", Range(3, 1))))
 
     for (input <- inputs) {
-      val result = LR.parse(input, init)
+      val result = LR.parse(input, init, true)
       println("input:  " + input.mkString(" "))
       println("result: " + result)
       println()

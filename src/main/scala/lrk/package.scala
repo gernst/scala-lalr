@@ -3,11 +3,6 @@ import scala.language.implicitConversions
 package object lrk {
   def id[A](a: A): A = a
 
-  def collapse(args: List[Any]): Any = args match {
-    case List(arg) => arg
-    case _ => args
-  }
-
   implicit class SetOps[A](self: Set[A]) {
     def disjoint(that: Set[A]) = {
       (self & that).isEmpty
