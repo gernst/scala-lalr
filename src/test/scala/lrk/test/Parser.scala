@@ -3,7 +3,7 @@ package lrk.test
 import scala.language.postfixOps
 
 import lrk._
-import lrk.internal.LR
+import lrk.parser.LR
 
 object parser {
   sealed trait Expr

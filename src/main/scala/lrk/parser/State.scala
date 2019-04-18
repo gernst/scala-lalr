@@ -1,6 +1,10 @@
-package lrk.internal
+package lrk.parser
 
 import scala.collection.mutable
+
+import lrk.util.NonTerminal
+import lrk.util.Symbol
+import lrk.util.Terminal
 
 case class Item(lhs: NonTerminal, rdone: List[Symbol], todo: List[Symbol], look: Set[Terminal]) {
   def canReduce = todo.isEmpty

@@ -1,6 +1,6 @@
 package lrk
 
-package object internal {
+package object parser {
   def id[A](a: A): A = a
 
   implicit class SetOps[A](self: Set[A]) {

@@ -1,4 +1,4 @@
-package lrk.internal
+package lrk.parser
 
 import scala.collection.mutable
 
@@ -9,6 +9,9 @@ import lrk.Range
 import lrk.Token
 import lrk.Tree
 import lrk.WithRules
+import lrk.util.NonTerminal
+import lrk.util.Stack
+import lrk.util.Terminal
 
 sealed trait Action
 
@@ -90,7 +93,7 @@ object LR {
           /* Fix transitions from the previous state */
           if (state.prev != null) {
             for ((symbol, `state`) <- state.prev.transitions) {
-              state.prev.transitions += (symbol -> that)
+              state.prev.transitions(symbol) = that
             }
           }
 
@@ -115,15 +118,14 @@ object LR {
     case (List(i0, i1, i2), f: Function3[Any, Any, Any, Any] @unchecked) => f(a(i0), a(i1), a(i2))
   }
 
-  def parse(in: Iterable[Token], init: State, annotate: Boolean = false): Any = {
+  def parse(in: Iterator[Token], init: State, annotate: Boolean = false): Any = {
     val states = new Stack[State]()
     val results = new Stack[Any]()
 
-    val iter = in.iterator
     var pos = 0
     def unpack(n: Int) = results(n).asInstanceOf[Tree].value
     def get(n: Int) = if (annotate) unpack(n) else results(n)
-    def next() = if (iter.hasNext) iter.next else Token(End, null, Range(pos, 0))
+    def next() = if (in.hasNext) in.next else Token(End, null, Range(pos, 0))
     var token = next()
 
     states push init

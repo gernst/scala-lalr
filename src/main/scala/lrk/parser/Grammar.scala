@@ -1,15 +1,9 @@
-package lrk.internal
+package lrk.parser
 
-import scala.annotation.migration
-
-sealed trait Symbol
-
-trait Terminal extends Symbol {
-}
-
-trait NonTerminal extends Symbol {
-  // def ->(rhs: Symbol*) = Rule(this, rhs.toList, collapse)
-}
+import lrk.util.Digraph
+import lrk.util.NonTerminal
+import lrk.util.Terminal
+import lrk.util.Symbol
 
 case object End extends Terminal
 case object Start extends NonTerminal

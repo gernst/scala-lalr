@@ -1,33 +1,47 @@
 package lrk
 
-import lrk.internal.NonTerminal
-import lrk.internal.Rule
-import lrk.internal.Symbol
-import lrk.internal.Terminal
-import lrk.internal.State
-import lrk.internal.LR
+import lrk.parser.LR
+import lrk.parser.Rule
+import lrk.util.NonTerminal
+import lrk.util.Symbol
+import lrk.util.Terminal
 
 sealed trait Parseable {
   def normalize: List[List[Atomic]]
 }
 
 sealed trait Recognizer extends Parseable {
-  def |(that: Recognizer): Recognizer = Recognizer.choice(this, that)
+  def |(that: Recognizer): Recognizer = {
+    Recognizer.choice(this, that)
+  }
 }
 
 sealed trait Parser[+A] extends Parseable {
-  def |[B >: A](that: Parser[B]): Parser[B] = Parser.choice(this, that)
-  def *(): Parser[List[A]] = Parser.rec("(" + this + ")*", (ps: Parser[List[A]]) => $(Nil) | this :: ps)
+  def |[B >: A](that: Parser[B]): Parser[B] = {
+    Parser.choice(this, that)
+  }
+
+  def *(): Parser[List[A]] = {
+    Parser.rec("(" + this + ")*", (ps: Parser[List[A]]) => $(Nil) | this :: ps)
+  }
 
   lazy val (init, states) = {
     LR.states(LR.translate(this))
   }
 
   def parse(in: Iterable[Token]): A = {
+    parse(in.iterator)
+  }
+
+  def parse(in: Iterator[Token]): A = {
     LR.parse(in, init, false).asInstanceOf[A]
   }
 
   def parseTree(in: Iterable[Token]): Node = {
+    parseTree(in.iterator)
+  }
+
+  def parseTree(in: Iterator[Token]): Node = {
     LR.parse(in, init, true).asInstanceOf[Node]
   }
 }
@@ -37,30 +51,31 @@ sealed trait Atomic extends Parseable {
   def normalize = List(List(this))
 }
 
-sealed trait WithRules extends Atomic {
-  def symbol: NonTerminal
+sealed trait WithRegex extends Atomic with Terminal {
+  def symbol = this
+  def re: Regex
+}
 
+sealed trait WithRules extends Atomic with NonTerminal {
+  def symbol = this
   def expand: List[List[Atomic]]
+  def apply: Any
+  def rindex: List[Int]
 
   def other: List[WithRules] = {
     expand flatMap (_ collect { case p: WithRules => p })
   }
 
-  def apply: Any
-  def rindex: List[Int]
-
-  def rules = expand map (rhs => Rule(symbol, rhs map (_.symbol), rindex, apply))
+  def rules: List[Rule] = {
+    expand map (rhs => Rule(symbol, rhs map (_.symbol), rindex, apply))
+  }
 }
 
 sealed trait Apply extends WithRules {
   def rparsers: List[Parseable]
   def parsers = rparsers.reverse
 
-  val symbol = new NonTerminal {
-    override def toString = "@" + System.identityHashCode(this)
-  }
-
-  def expand = {
+  def expand: List[List[Atomic]] = {
     parsers.foldRight(Recognizer.empty.normalize)(seq)
   }
 
@@ -71,13 +86,19 @@ sealed trait Apply extends WithRules {
     ) yield ps ++ qs
   }
 
-  override def toString = parsers.mkString("(", " ~ ", ")@")
+  override def toString = {
+    parsers.mkString("(", " ~ ", ")@")
+  }
 }
 
 object Recognizer {
   case object empty extends Recognizer {
     def normalize = List(Nil: List[Atomic])
     override def toString = "_"
+  }
+
+  case class regex(re: Regex) extends Recognizer with WithRegex {
+    override def toString = "'" + re + "'"
   }
 
   case class literal(name: String) extends Recognizer with Atomic with Terminal {
@@ -94,7 +115,6 @@ object Recognizer {
 object Parser {
   case class named[+A](name: String, parser: () => Parser[A]) extends Parser[A] with WithRules {
     lazy val self = parser()
-    val symbol = new NonTerminal { override def toString = name }
     def expand = self.normalize
 
     def apply = (a: Any) => a
@@ -105,15 +125,16 @@ object Parser {
 
   case class rec[A](name: String, parser: Parser[A] => Parser[A]) extends Parser[A] with WithRules {
     lazy val self = parser(this)
-    val symbol = new NonTerminal {
-      override def toString = "@" + System.identityHashCode(this)
-    }
     def expand = self.normalize
 
     def apply = (a: Any) => a
     def rindex = List(0)
 
     override def toString = name
+  }
+
+  case class regex(re: Regex) extends Parser[String] with WithRegex {
+    override def toString = "'" + re + "'"
   }
 
   case class choice[+A](left: Parser[A], right: Parser[A]) extends Parser[A] {

@@ -1,6 +1,10 @@
 import scala.language.implicitConversions
 
 package object lrk {
+  def S[A](init: Mode, other: Mode*) = {
+    Scanner(init, other: _*)
+  }
+
   def P[A](parser: => Parser[A])(implicit name: sourcecode.Name) = {
     Parser.named(name.value, () => parser)
   }
@@ -10,6 +14,13 @@ package object lrk {
 
   def $[A](a: A) = {
     Recognizer.empty map a
+  }
+
+  object Set1 {
+    def unapply[A](s: Set[A]) = {
+      if (s.size == 1) Some(s.head)
+      else None
+    }
   }
 
   implicit class ListParser[A](ps: Parser[List[A]]) {

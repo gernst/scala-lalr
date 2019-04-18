@@ -1,4 +1,4 @@
-package lrk.internal
+package lrk.util
 
 import scala.reflect.ClassTag
 
@@ -13,7 +13,7 @@ class Stack[A: ClassTag]() extends (Int => A) {
   def length = end
 
   def grow() {
-    val more = new Array(stack.length * 2)
+    val more = new Array[A](stack.length * 2)
     System.arraycopy(stack, 0, more, 0, end)
     stack = more
   }
@@ -42,5 +42,7 @@ class Stack[A: ClassTag]() extends (Int => A) {
     stack(end - index - 1)
   }
   
-  override def toString = (stack take end).mkString("Stack(", ",", ")")
+  override def toString = {
+    (stack take end).mkString("Stack(", ",", ")")
+  }
 }
