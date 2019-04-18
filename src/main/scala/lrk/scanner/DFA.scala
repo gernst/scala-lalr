@@ -56,7 +56,7 @@ object DFA {
   /**
    * Scan longest prefix of cs from a state.
    */
-  def scan(in: Reader, init: State) = new Iterator[Token] {
+  def scan(in: Reader, scanner: Scanner) = new Iterator[Token] {
     val buf = new Array[Char](1)
     val result = new Buffer()
 
@@ -76,6 +76,7 @@ object DFA {
     }
 
     def next = {
+      val init = scanner.state
       var state = init
       var accepting: Option[(State, Int)] = None
 

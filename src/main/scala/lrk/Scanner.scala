@@ -199,6 +199,7 @@ object Regex {
 }
 
 class Mode {
+  var state: scanner.State = _
   val regexps = mutable.ListBuffer[WithRegex]()
 
   def extend = {
@@ -245,13 +246,16 @@ class Mode {
 }
 
 case class Scanner(init: Mode, other: Mode*) {
+  var mode: Mode = init
+  def state = mode.state
+
   def scan(in: Reader): Iterator[Token] = {
     val (init, states) = DFA.states(DFA.translate(this))
     for (state <- states) {
       println(state.dump)
       println()
     }
-    DFA.scan(in, init)
+    DFA.scan(in, this)
   }
 }
 
