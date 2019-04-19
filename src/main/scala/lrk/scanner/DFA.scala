@@ -9,11 +9,11 @@ import lrk.Range
 import lrk.Scanner
 import lrk.Token
 import lrk.util.Buffer
+import lrk.Mode
 
 object DFA {
-  def translate(scanner: Scanner): Lexical = {
-    assert(scanner.other.isEmpty)
-    val rules = scanner.init.regexps.map {
+  def translate(mode: Mode): Lexical = {
+    val rules = mode.regexps.map {
       re => Rule(re.symbol, re.re)
     }
     Lexical(rules.toList)
@@ -82,6 +82,7 @@ object DFA {
 
       breakable {
         while (hasNext) {
+          assert(state != null)
           if (state.transitions contains letter) {
             result append letter
             state = state.transitions(letter)

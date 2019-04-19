@@ -26,6 +26,18 @@ sealed trait Parser[+A] extends Parseable {
     Parser.rec("(" + this + ")*", (ps: Parser[List[A]]) => $(Nil) | this :: ps)
   }
 
+  def +(): Parser[List[A]] = {
+    this :: this.*
+  }
+
+  def ~*(sep: Recognizer): Parser[List[A]] = {
+    this :: (sep ~ this).*
+  }
+
+  def ~+(sep: Recognizer): Parser[List[A]] = {
+    this :: (sep ~ this).+
+  }
+
   lazy val (init, states) = {
     LR.states(LR.translate(this))
   }
@@ -161,8 +173,10 @@ object Sequence {
     def flatMap[Z](f: Z): Parser[Z] = Parser.apply0(f, rparsers, true)
   }
 
-  case class of1[+A](rindex: List[Int], rparsers: List[Parseable]) {
+  case class of1[+A](rindex: List[Int], rparsers: List[Parseable]) extends Parser[A] with Apply {
     assert(rindex.length == 1)
+    def apply = lrk.parser.id[Any] _
+    def collapse = true
     def ~(p: Recognizer) = of1[A](rindex, p :: rparsers)
     def ~[B](p: Parser[B]) = of2[A, B](rparsers.length :: rindex, p :: rparsers)
     def map[A, Z](f: (A => Z)): Parser[Z] = Parser.apply1(f, rindex, rparsers, false)

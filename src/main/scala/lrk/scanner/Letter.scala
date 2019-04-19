@@ -15,7 +15,9 @@ object Letter {
 object Letters {
   val empty = BitSet.empty
   val alphabet = BitSet(0 to Char.MaxValue: _*)
-  
+  def single(c: Int) = BitSet(c)
+  def range(first: Int, last: Int) = BitSet(first to last: _*)
+
   def compact(cs: Iterable[Letter]) = {
     val rs = runs(cs.toList.sorted.distinct)
     val ks = rs map {
@@ -24,7 +26,7 @@ object Letters {
     }
     ks mkString ("[", "", "]")
   }
-  
+
   def run(c: Letter, cs: List[Letter]): Int = cs match {
     case `c` :: rest => 1 + run(c + 1, rest)
     case _ => 0

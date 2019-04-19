@@ -30,10 +30,12 @@ package object lrk {
   }
 
   implicit class Constr0[Z](f: Z) {
+    def apply(p: Recognizer): Parser[Z] = p map f
     def apply(p: Sequence.of0): Parser[Z] = p map f
   }
 
   implicit class Constr1[A, Z](f: (A => Z)) {
+    def apply(p: Parser[A]): Parser[Z] = p map f
     def apply(p: Sequence.of1[A]): Parser[Z] = p map f
   }
 

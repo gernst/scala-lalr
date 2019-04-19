@@ -27,7 +27,7 @@ class State(val items: List[Item], val prev: State) {
   }
 
   def canAccept = {
-    for (item <- items if item accepts)
+    for (item <- items if item.accepts)
       yield item.lhs
   }
 

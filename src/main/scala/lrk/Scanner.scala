@@ -9,6 +9,9 @@ import lrk.scanner.Letter
 import lrk.scanner.Letters
 import lrk.util.Fixity
 import lrk.util.Terminal
+import java.io.StringReader
+import java.io.File
+import java.io.FileReader
 
 case class Token(symbol: Terminal, text: String, range: Range)
 
@@ -50,8 +53,78 @@ sealed trait Regex {
 }
 
 object Regex {
-  def apply(re: String): Regex = {
-    ???
+  def apply(pat: String): Regex = {
+
+    def test(c: Char, i: Int): Int = {
+      if (pat(i) == c) i + 1
+      else throw new IllegalArgumentException("expected " + c + " at position " + i + " in " + pat)
+    }
+
+    def range(i0: Int): (Letters, Int) = pat(i0) match {
+      case ']' =>
+        (Letters.empty, i0)
+
+      case start =>
+        val i1 = test(start, i0)
+        if (pat(i1) == '-') {
+          val i2 = test('-', i1)
+          val end = pat(i2)
+          val i3 = test(end, i2)
+          val ls0 = Letters.range(start, end)
+          val (ls1, i4) = range(i3)
+          (ls0 | ls1, i4)
+        } else {
+          val ls0 = Letters.single(start)
+          val (ls1, i2) = range(i1)
+          (ls0 | ls1, i2)
+        }
+    }
+
+    def atom(i0: Int): (Regex, Int) = pat(i0) match {
+      case '(' =>
+        val i1 = test('(', i0)
+        val (re, i2) = parse(i1)
+        val i3 = test(')', i2)
+        (re, i3)
+      case '[' =>
+        val i1 = test('[', i0)
+        val (ls, i2) = range(i1)
+        val i3 = test(']', i2)
+        (Regex.letters(ls), i3)
+      case ')' =>
+        (???, test('.', i0))
+      case ']' =>
+        (???, test('.', i0))
+      case '\\' =>
+        val i1 = test('\\', i0)
+        val c = pat(i1)
+        val i2 = test(c, i1)
+        (Regex.letters(c), i2)
+      case c =>
+        val i1 = test(c, i0)
+        (Regex.letters(c), i1)
+    }
+
+    def post(re: Regex, i0: Int): (Regex, Int) = pat(i0) match {
+      case '?' =>
+        (re.?, test('?', i0))
+      case '*' =>
+        (re.*, test('*', i0))
+      case '+' =>
+        (re.+, test('+', i0))
+    }
+
+    def parse(i0: Int) = {
+      val (re, i1) = atom(i0)
+      if (i1 < pat.length)
+        post(re, i1)
+      else
+        (re, i1)
+    }
+
+    val (re, n) = parse(0)
+    assert(n == pat.length)
+    re
   }
 
   val epsilon: Regex = and(Set())
@@ -168,7 +241,7 @@ object Regex {
 
   def letters(b: Int): Regex = {
     assert(0 <= b && b <= Char.MaxValue)
-    letters(Letters.empty + b)
+    letters(Letters.single(b))
   }
 
   def seq(es: Iterable[Regex]): Regex = {
@@ -203,12 +276,21 @@ object Regex {
 
 class Mode {
   var state: scanner.State = _
+  val whitespace = mutable.ListBuffer[Regex]()
   val regexps = mutable.ListBuffer[WithRegex]()
 
   def extend = {
     val mode = new Mode
     mode.regexps ++= this.regexps
     mode
+  }
+
+  def ignore(re: Regex) {
+    whitespace += re
+  }
+
+  def ignore(pat: String) {
+    ignore(Regex(pat))
   }
 
   def accept(re: Regex, fixity: Fixity): Recognizer = {
@@ -252,12 +334,22 @@ case class Scanner(init: Mode, other: Mode*) {
   var mode: Mode = init
   def state = mode.state
 
+  def scan(text: String): Iterator[Token] = {
+    scan(new StringReader(text))
+  }
+
+  def scan(file: File): Iterator[Token] = {
+    scan(new FileReader(file))
+  }
+
+  def compile(mode: Mode) {
+    val (init, states) = DFA.states(DFA.translate(mode))
+    mode.state = init
+  }
+
   def scan(in: Reader): Iterator[Token] = {
-    val (init, states) = DFA.states(DFA.translate(this))
-    for (state <- states) {
-      println(state.dump)
-      println()
-    }
+    compile(init)
+    for (mode <- other) compile(mode)
     DFA.scan(in, this)
   }
 }
