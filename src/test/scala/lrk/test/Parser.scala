@@ -40,7 +40,7 @@ object parser {
       Seq(Token(lparen, "(", Range(0, 1)), Token(x, "x", Range(1, 1)), Token(y, "y", Range(2, 1)), Token(rparen, ")", Range(3, 1))))
 
     for (input <- inputs) {
-      val result = expr.parse(input)
+      val result = expr.parseTree(input)
       println("input:  " + input.mkString(" "))
       println("result: " + result)
       println()

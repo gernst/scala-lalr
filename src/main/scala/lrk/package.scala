@@ -24,24 +24,24 @@ package object lrk {
   }
 
   implicit class ListParser[A](ps: Parser[List[A]]) {
-    def ::(p: Parser[A]) = (p ~ ps) map {
+    def ::(p: Parser[A]) = (p ~ ps) flatMap {
       (a: A, as: List[A]) => a :: as
     }
   }
 
   implicit class Constr0[Z](f: Z) {
-    def apply(p: Sequence.of0): Parser[Z] = Parser.apply0(f, p.rparsers)
+    def apply(p: Sequence.of0): Parser[Z] = p map f
   }
 
   implicit class Constr1[A, Z](f: (A => Z)) {
-    def apply(p: Sequence.of1[A]): Parser[Z] = Parser.apply1(f, p.rindex, p.rparsers)
+    def apply(p: Sequence.of1[A]): Parser[Z] = p map f
   }
 
   implicit class Constr2[A, B, Z](f: (A, B) => Z) {
-    def apply(p: Sequence.of2[A, B]): Parser[Z] = Parser.apply2(f, p.rindex, p.rparsers)
+    def apply(p: Sequence.of2[A, B]): Parser[Z] = p map f
   }
 
   implicit class Constr3[A, B, C, Z](f: (A, B, C) => Z) {
-    def apply(p: Sequence.of3[A, B, C]): Parser[Z] = Parser.apply3(f, p.rindex, p.rparsers)
+    def apply(p: Sequence.of3[A, B, C]): Parser[Z] = p map f
   }
 }

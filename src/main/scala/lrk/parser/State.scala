@@ -2,7 +2,11 @@ package lrk.parser
 
 import scala.collection.mutable
 
+import lrk.util.Fixity
+import lrk.util.Left
+import lrk.util.Non
 import lrk.util.NonTerminal
+import lrk.util.Right
 import lrk.util.Symbol
 import lrk.util.Terminal
 
@@ -65,6 +69,17 @@ class State(val kernel: mutable.Set[Item], val prev: State, val grammar: Grammar
     }
   }
 
+  def conflict(t: Terminal, shift: Shift, reduce: Reduce): Nothing = {
+    println("paths: ")
+    for (path <- paths(Set(List()), Set()))
+      println("  " + path.mkString(" "))
+    println()
+    println("merged: ")
+    for (state <- merged)
+      println(state.dump)
+    sys.error("conflict in state " + number + " on " + t + " between " + shift + " and " + reduce)
+  }
+
   /** Merge two sets of actions, avoiding shift/reduce and reduce/reduce conflicts */
   def resolve(t: Terminal, shift: Iterable[Action], reduce: Iterable[Action]): Action = {
     // XX: consider precedence here
@@ -72,22 +87,23 @@ class State(val kernel: mutable.Set[Item], val prev: State, val grammar: Grammar
     assert(reduce.size <= 1)
     val maybeShift = shift.headOption
     val maybeReduce = reduce.headOption
+
     (maybeShift, maybeReduce) match {
-      case (Some(shift), Some(reduce)) =>
-        println("paths: ")
-        for (path <- paths(Set(List()), Set()))
-          println("  " + path.mkString(" "))
-        println()
-        println("merged: ")
-        for (state <- merged)
-          println(state.dump)
-        sys.error("conflict in state " + number + " on " + t + " between " + shift + " and " + reduce)
+      case (Some(shift: Shift), Some(reduce: Reduce)) =>
+        val which = Fixity.resolve(reduce.rule.prec, t.fixity)
+        which match {
+          case Left => reduce
+          case Right => shift
+          case Non => conflict(t, shift, reduce)
+        }
       case (Some(shift), None) =>
         shift
       case (None, Some(reduce)) =>
         reduce
       case (None, None) =>
         Reject
+      case _ =>
+        sys.error("unexpected combinations of actions: " + maybeShift + " " + maybeReduce)
     }
   }
 
@@ -103,7 +119,7 @@ class State(val kernel: mutable.Set[Item], val prev: State, val grammar: Grammar
       } else {
         val rhs = rdone.reverse
         val List(rule) = grammar.rules collect {
-          case rule @ Rule(`lhs`, `rhs`, _, _) =>
+          case rule @ Rule(`lhs`, `rhs`, _, _, _) =>
             rule
         }
         Reduce(rule)
@@ -135,7 +151,7 @@ class State(val kernel: mutable.Set[Item], val prev: State, val grammar: Grammar
           case Item(_, _, (lhs: NonTerminal) :: rest, look) =>
             // XXX: find a way not to recompute first for each iteration
             val follow = grammar.first(rest, look)
-            for (Rule(`lhs`, rhs, _, _) <- grammar.rules) {
+            for (Rule(`lhs`, rhs, _, _, _) <- grammar.rules) {
               val item = Item(lhs, Nil, rhs, follow)
               todo enqueue item
             }

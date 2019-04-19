@@ -5,6 +5,7 @@ import lrk.parser.Rule
 import lrk.util.NonTerminal
 import lrk.util.Symbol
 import lrk.util.Terminal
+import lrk.util.Fixity
 
 sealed trait Parseable {
   def normalize: List[List[Atomic]]
@@ -60,6 +61,7 @@ sealed trait WithRules extends Atomic with NonTerminal {
   def symbol = this
   def expand: List[List[Atomic]]
   def apply: Any
+  def collapse: Boolean
   def rindex: List[Int]
 
   def other: List[WithRules] = {
@@ -67,7 +69,7 @@ sealed trait WithRules extends Atomic with NonTerminal {
   }
 
   def rules: List[Rule] = {
-    expand map (rhs => Rule(symbol, rhs map (_.symbol), rindex, apply))
+    expand map (rhs => Rule(symbol, rhs map (_.symbol), rindex, apply, collapse))
   }
 }
 
@@ -97,12 +99,13 @@ object Recognizer {
     override def toString = "_"
   }
 
-  case class regex(re: Regex) extends Recognizer with WithRegex {
+  case class regex(re: Regex, fixity: Fixity) extends Recognizer with WithRegex {
     override def toString = "'" + re + "'"
   }
 
   case class literal(name: String) extends Recognizer with Atomic with Terminal {
     def symbol = this
+    def fixity = Fixity.default
     override def toString = "'" + name + "'"
   }
 
@@ -119,6 +122,7 @@ object Parser {
 
     def apply = (a: Any) => a
     def rindex = List(0)
+    def collapse = true
 
     override def toString = name
   }
@@ -129,11 +133,12 @@ object Parser {
 
     def apply = (a: Any) => a
     def rindex = List(0)
+    def collapse = true
 
     override def toString = name
   }
 
-  case class regex(re: Regex) extends Parser[String] with WithRegex {
+  case class regex(re: Regex, fixity: Fixity) extends Parser[String] with WithRegex {
     override def toString = "'" + re + "'"
   }
 
@@ -142,37 +147,41 @@ object Parser {
     override def toString = "(" + left + " | " + right + ")"
   }
 
-  case class apply0[Z](apply: Z, rparsers: List[Parseable]) extends Parser[Z] with Apply { def rindex = Nil }
-  case class apply1[A, Z](apply: (A) => Z, rindex: List[Int], rparsers: List[Parseable]) extends Parser[Z] with Apply
-  case class apply2[A, B, Z](apply: (A, B) => Z, rindex: List[Int], rparsers: List[Parseable]) extends Parser[Z] with Apply
-  case class apply3[A, B, C, Z](apply: (A, B, C) => Z, rindex: List[Int], rparsers: List[Parseable]) extends Parser[Z] with Apply
+  case class apply0[Z](apply: Z, rparsers: List[Parseable], collapse: Boolean) extends Parser[Z] with Apply { def rindex = Nil }
+  case class apply1[A, Z](apply: (A) => Z, rindex: List[Int], rparsers: List[Parseable], collapse: Boolean) extends Parser[Z] with Apply
+  case class apply2[A, B, Z](apply: (A, B) => Z, rindex: List[Int], rparsers: List[Parseable], collapse: Boolean) extends Parser[Z] with Apply
+  case class apply3[A, B, C, Z](apply: (A, B, C) => Z, rindex: List[Int], rparsers: List[Parseable], collapse: Boolean) extends Parser[Z] with Apply
 }
 
 object Sequence {
   case class of0(rparsers: List[Parseable]) {
     def ~(p: Recognizer) = of0(p :: rparsers)
     def ~[A](p: Parser[A]) = of1[A](List(rparsers.length), p :: rparsers)
-    def map[Z](f: Z): Parser[Z] = Parser.apply0(f, rparsers)
+    def map[Z](f: Z): Parser[Z] = Parser.apply0(f, rparsers, false)
+    def flatMap[Z](f: Z): Parser[Z] = Parser.apply0(f, rparsers, true)
   }
 
   case class of1[+A](rindex: List[Int], rparsers: List[Parseable]) {
     assert(rindex.length == 1)
     def ~(p: Recognizer) = of1[A](rindex, p :: rparsers)
     def ~[B](p: Parser[B]) = of2[A, B](rparsers.length :: rindex, p :: rparsers)
-    def map[A, Z](f: (A => Z)): Parser[Z] = Parser.apply1(f, rindex, rparsers)
+    def map[A, Z](f: (A => Z)): Parser[Z] = Parser.apply1(f, rindex, rparsers, false)
+    def flatMap[A, Z](f: (A => Z)): Parser[Z] = Parser.apply1(f, rindex, rparsers, true)
   }
 
   case class of2[+A, +B](rindex: List[Int], rparsers: List[Parseable]) {
     assert(rindex.length == 2)
     def ~(p: Recognizer) = of2[A, B](rindex, p :: rparsers)
     def ~[C](p: Parser[C]) = of3[A, B, C](rparsers.length :: rindex, p :: rparsers)
-    def map[A, B, Z](f: (A, B) => Z): Parser[Z] = Parser.apply2(f, rindex, rparsers)
+    def map[A, B, Z](f: (A, B) => Z): Parser[Z] = Parser.apply2(f, rindex, rparsers, false)
+    def flatMap[A, B, Z](f: (A, B) => Z): Parser[Z] = Parser.apply2(f, rindex, rparsers, true)
   }
 
   case class of3[+A, +B, +C](rindex: List[Int], rparsers: List[Parseable]) {
     assert(rindex.length == 3)
     def ~[C](p: Recognizer) = of3[A, B, C](rindex, p :: rparsers)
     // XXX: more sequences
-    def map[A, B, C, Z](f: (A, B, C) => Z): Parser[Z] = Parser.apply3(f, rindex, rparsers)
+    def map[A, B, C, Z](f: (A, B, C) => Z): Parser[Z] = Parser.apply3(f, rindex, rparsers, false)
+    def flatMap[A, B, C, Z](f: (A, B, C) => Z): Parser[Z] = Parser.apply3(f, rindex, rparsers, true)
   }
 }

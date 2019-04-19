@@ -170,7 +170,9 @@ object LR {
 
           val value = if (annotate) {
             val args = List.tabulate(arity)(i => results(arity - 1 - i).asInstanceOf[Tree])
-            Node(result, args)
+            val node = Node(result, args)
+            if (rule.collapse) node.collapse
+            else node
           } else {
             result
           }

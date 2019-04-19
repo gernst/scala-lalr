@@ -80,4 +80,5 @@ case class Leaf(value: Any, location: Range) extends Tree {
 
 case class Node(value: Any, children: List[Tree]) extends Tree {
   def range = children.foldLeft(Range.empty)(_ | _.range)
+  def collapse = Node(value, children flatMap (_.children))
 }

@@ -1,11 +1,14 @@
 package lrk
 
-import lrk.util.Terminal
 import java.io.Reader
+
 import scala.collection.mutable
-import lrk.scanner.Letters
-import lrk.scanner.Letter
+
 import lrk.scanner.DFA
+import lrk.scanner.Letter
+import lrk.scanner.Letters
+import lrk.util.Fixity
+import lrk.util.Terminal
 
 case class Token(symbol: Terminal, text: String, range: Range)
 
@@ -208,40 +211,40 @@ class Mode {
     mode
   }
 
-  def accept(re: Regex): Recognizer = {
-    val recognizer = Recognizer.regex(re)
+  def accept(re: Regex, fixity: Fixity): Recognizer = {
+    val recognizer = Recognizer.regex(re, fixity)
     regexps += recognizer
     recognizer
   }
 
-  def accept(pat: String): Recognizer = {
-    accept(Regex(pat))
+  def accept(pat: String, fixity: Fixity = Fixity.default): Recognizer = {
+    accept(Regex(pat), fixity)
   }
 
-  def literal(re: Regex): Parser[String] = {
-    val parser = Parser.regex(re)
+  def literal(re: Regex, fixity: Fixity): Parser[String] = {
+    val parser = Parser.regex(re, fixity)
     regexps += parser
     parser
   }
 
-  def literal(pat: String): Parser[String] = {
-    literal(Regex(pat))
+  def literal(pat: String, fixity: Fixity = Fixity.default): Parser[String] = {
+    literal(Regex(pat), fixity)
   }
 
-  def value[A](re: Regex, a: A): Parser[A] = {
-    accept(re) map a
+  def value[A](re: Regex, a: A, fixity: Fixity): Parser[A] = {
+    accept(re, fixity) map a
   }
 
-  def value[A](pat: String, a: A): Parser[A] = {
-    value(Regex(pat), a)
+  def value[A](pat: String, a: A, fixity: Fixity = Fixity.default): Parser[A] = {
+    value(Regex(pat), a, fixity)
   }
 
-  def map[A](re: Regex, f: String => A): Parser[A] = {
-    literal(re) map f
+  def map[A](re: Regex, f: String => A, fixity: Fixity): Parser[A] = {
+    literal(re, fixity) map f
   }
 
-  def map[A](pat: String, f: String => A): Parser[A] = {
-    map(Regex(pat), f)
+  def map[A](pat: String, f: String => A, fixity: Fixity = Fixity.default): Parser[A] = {
+    map(Regex(pat), f, fixity)
   }
 }
 

@@ -1,22 +1,33 @@
 package lrk.parser
 
 import lrk.util.Digraph
+import lrk.util.Fixity
 import lrk.util.NonTerminal
-import lrk.util.Terminal
 import lrk.util.Symbol
+import lrk.util.Terminal
 
-case object End extends Terminal
+case object End extends Terminal {
+  def fixity = Fixity.default
+}
+
 case object Start extends NonTerminal
 
-case class Rule(lhs: NonTerminal, rhs: List[Symbol], rindex: List[Int], apply: Any) {
+case class Rule(lhs: NonTerminal, rhs: List[Symbol], rindex: List[Int], apply: Any, collapse: Boolean) {
   def symbols = Set(lhs) ++ rhs
   def terminals = Set() ++ (rhs collect { case n: Terminal => n })
   def nonterminals = Set(lhs) ++ (rhs collect { case n: NonTerminal => n })
+
+  def prec: Int = { // yuck code, where is .findLast?
+    val n = rhs.lastIndexWhere(_.isInstanceOf[Terminal])
+    if (n < 0) 0
+    else rhs(n).asInstanceOf[Terminal].fixity.prec
+  }
+
   override def toString = lhs + " -> " + rhs.mkString(" ")
 }
 
 object Rule {
-  def singleton(lhs: NonTerminal, rhs: Symbol) = Rule(lhs, List(rhs), List(0), id[Any] _)
+  def singleton(lhs: NonTerminal, rhs: Symbol) = Rule(lhs, List(rhs), List(0), id[Any] _, false)
 }
 
 case class Grammar(start: NonTerminal, rules: List[Rule]) {
@@ -40,7 +51,7 @@ case class Grammar(start: NonTerminal, rules: List[Rule]) {
     case (n: NonTerminal) :: _ if seen contains n =>
       Set()
     case (n: NonTerminal) :: rest =>
-      val sets = for (Rule(`n`, rhs, _, _) <- rules) yield {
+      val sets = for (Rule(`n`, rhs, _, _, _) <- rules) yield {
         first(rhs ++ next, look, seen + n)
       }
       Set(sets.flatten: _*)
@@ -63,7 +74,7 @@ case class Grammar(start: NonTerminal, rules: List[Rule]) {
       case (Nil, look) => List()
       case ((t: Terminal) :: _, _) => List()
       case ((n: NonTerminal) :: rest, look) =>
-        for (Rule(`n`, rhs, _, _) <- rules) yield {
+        for (Rule(`n`, rhs, _, _, _) <- rules) yield {
           (rhs ++ rest, look)
         }
     }
