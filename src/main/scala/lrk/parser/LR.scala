@@ -35,6 +35,8 @@ case class Table(action: Terminal => Action, goto: NonTerminal => State) {
 }
 
 object LR {
+  var debug = false
+  
   def translate(init: Parser[_]): Grammar = {
     val rules = mutable.ListBuffer[Rule]()
 
@@ -69,43 +71,50 @@ object LR {
   def states(grammar: Grammar): (State, Seq[State]) = {
     var number = 0
 
-    val todo = mutable.Queue[State]()
+    val incomplete = mutable.Queue[State]()
     val states = mutable.Buffer[State]() // XXX: see whether caching by core is worthwile for larger grammars
 
     val start = Item(Start, List(), List(grammar.start), Set(End))
     val init = new State(mutable.Set(start), null, grammar)
 
-    todo enqueue init
+    incomplete enqueue init
+    init.computeItems()
 
-    while (!todo.isEmpty) {
-      val state = todo.dequeue
+    while (!incomplete.isEmpty) {
+      val todo = mutable.Queue[State]()
 
-      val that = states find (_.core == state.core)
+      if (!incomplete.isEmpty) {
+        val state = incomplete.dequeue
+        state.computeTransitions()
+        todo ++= state.succ
+        states += state
+      }
 
-      that match {
-        case Some(that) if that canMerge state =>
-          if (state.kernel subsetOf that.kernel) {
-            /* Nothing to add */
-          } else {
-            /* Merge items */
-            that.kernel ++= state.kernel
-            that.items ++= state.items
-          }
+      for (state <- todo) {
+        state.computeItems()
+        val that = states find (_.core == state.core)
 
-          that.merged += state
+        that match {
+          case Some(that) if state canMerge that =>
+            val changed = that merge state
 
-          /* Fix transitions from state's predecessor */
-          if (state.prev != null) {
-            for ((symbol, `state`) <- state.prev.transitions) {
-              state.prev.transitions(symbol) = that
+            if (changed) {
+              incomplete += that
+              // that.recompute()
+              // todo ++= state.succ
             }
-          }
+          // states -= that
+          // assert(!changed)
 
-        case _ =>
-          number += 1
-          state.number = number
-          states += state
-          todo ++= state.succ
+          case _ =>
+            number += 1
+            state.number = number
+            incomplete += state
+            // states += state
+
+            // state.computeTransitions()
+            // todo ++= state.succ
+        }
       }
     }
 
@@ -136,8 +145,8 @@ object LR {
 
     while (true) {
       val state = states.top
-      println("in state: " + state.number)
-      println("results:  " + results)
+      if(debug) println("in state: " + state.number)
+      if(debug) println("results:  " + results)
 
       val action = state.table action token.symbol
 
@@ -147,11 +156,11 @@ object LR {
           return results.pop
 
         case Reject =>
-          println(state.dump)
+          if(debug) println(state.dump)
           sys.error("unexpected symbol: " + token.symbol)
 
         case Shift(state) =>
-          println("shift " + token)
+          if(debug) println("shift " + token)
           val result = token.text
 
           val value = if (annotate) {
@@ -168,7 +177,7 @@ object LR {
 
         case Reduce(rule) =>
           val arity = rule.rhs.length
-          println("reduce " + rule)
+          if(debug) println("reduce " + rule)
           assert(rule.rindex forall (_ < arity))
 
           val result = reduce(get(_, arity), rule.rindex, rule.apply)

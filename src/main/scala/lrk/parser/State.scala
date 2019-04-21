@@ -31,8 +31,14 @@ case class Core(lhs: NonTerminal, rdone: List[Symbol], todo: List[Symbol]) {
 class State(val kernel: mutable.Set[Item], val prev: State, val grammar: Grammar) {
   var number = 0
   val core = kernel map (_.core)
+  val items = mutable.Set[Item]()
+  val transitions = mutable.Map[Symbol, State]()
   val merged = mutable.Set[State]()
-
+  
+  def first = {
+    items collect { case Item(_, _, shift :: rest, _) => shift }
+  }
+  
   def succ = {
     transitions map { case (_, next) => next }
   }
@@ -136,16 +142,40 @@ class State(val kernel: mutable.Set[Item], val prev: State, val grammar: Grammar
     return true
   }
 
+  def merge(that: State): Boolean = {
+    val changed = !(that.kernel subsetOf this.kernel)
+
+    this.kernel ++= that.kernel
+    this.items ++= that.items
+
+    this.merged ++= that.merged
+    this.merged += that
+
+    /* Fix transitions from state's predecessor */
+    if (that.prev != null) {
+      for ((symbol, next) <- that.prev.transitions if that == next) {
+        that.prev.transitions(symbol) = this
+      }
+    }
+
+    changed
+  }
+  
+  def recompute() {
+    computeItems()
+    computeTransitions()
+  }
+
   /** Item closure from the kernel set */
-  lazy val items = {
-    val result = mutable.Set[Item]()
+  def computeItems() {
+    items.clear()
     val todo = mutable.Queue[Item]()
     todo ++= kernel
 
     while (!todo.isEmpty) {
       val item = todo.dequeue
-      if (!(result contains item)) {
-        result += item
+      if (!(items contains item)) {
+        items += item
 
         item match {
           case Item(_, _, (lhs: NonTerminal) :: rest, look) =>
@@ -159,28 +189,19 @@ class State(val kernel: mutable.Set[Item], val prev: State, val grammar: Grammar
         }
       }
     }
-
-    result
   }
 
   /** Successor states for each terminal/nonterminal */
-  lazy val transitions = {
-    val result = mutable.Map[Symbol, State]()
-
-    val symbols = for (Item(_, _, shift :: rest, _) <- items) yield {
-      shift
-    }
-
-    for (symbol <- symbols) {
-      assert(!(result contains symbol))
+  def computeTransitions() {
+    transitions.clear()
+    for (symbol <- first) {
+      assert(!(transitions contains symbol))
       val kernel = for (item @ Item(lhs, rdone, `symbol` :: rest, look) <- items) yield {
         Item(lhs, symbol :: rdone, rest, look)
       }
       val next = new State(kernel, this, grammar)
-      result += (symbol -> next)
+      transitions += (symbol -> next)
     }
-
-    result
   }
 
   override def toString = "state " + number

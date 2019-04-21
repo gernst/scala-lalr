@@ -43,17 +43,19 @@ object test {
     val app = App(name ~ lparen ~ exprs ~ rparen)
     val op = Unary(minus ~ expr) | Binary(expr ~ minus ~ expr) | Binary(expr ~ plus ~ expr) | Binary(expr ~ star ~ expr)
     val parens = lparen ~ expr ~ rparen
+    
+    val small: Parser[Expr] = P(id | (lparen ~ small ~ rparen))
   }
 
   def main(args: Array[String]) {
     val scanner = Scanner(mode)
     val parser = grammar.expr
-
+    println("parser has " + parser.states.length + " states")
     for (state <- parser.states) {
-      // println(state.dump)
+      println(state.dump)
     }
     println("-------------------------------")
-    val in = scanner.scan("0*(-a+-1)")
+    val in = scanner.scan("(a+-f(a,b,c)*3*-1+---a)")
     val result = parser.parse(in)
     println(result)
   }
