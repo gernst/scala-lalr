@@ -10,7 +10,7 @@ package object lrk {
   }
 
   implicit def toSequence0(p: Recognizer) = Sequence.of0(List(p))
-  implicit def toSequence1[A](p: Parser[A]) = Sequence.of1(List(0), List(p))
+  implicit def toSequence1[A](p: Parser[A]) = Sequence.of1[A](List(0), List(p))
 
   def $[A](a: A) = {
     Recognizer.empty map a

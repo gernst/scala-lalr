@@ -10,12 +10,17 @@ import lrk.Scanner
 import lrk.Token
 import lrk.util.Buffer
 import lrk.Mode
+import scala.annotation.tailrec
 
 object DFA {
   def translate(mode: Mode): Lexical = {
-    val rules = mode.regexps.map {
-      re => Rule(re.symbol, re.re)
-    }
+    val rules = new mutable.ListBuffer[Rule]()
+
+    for (re <- mode.regexps)
+      rules += Rule(re.symbol, re.re)
+    for (re <- mode.whitespace)
+      rules += Rule(Whitespace, re)
+
     Lexical(rules.toList)
   }
 
@@ -56,7 +61,11 @@ object DFA {
   /**
    * Scan longest prefix of cs from a state.
    */
-  def scan(in: Reader, scanner: Scanner) = new Iterator[Token] {
+  def scan(in: Reader, scanner: Scanner) = {
+    scanWithWhitespace(in, scanner) filterNot (_.symbol == Whitespace)
+  }
+
+  def scanWithWhitespace(in: Reader, scanner: Scanner) = new Iterator[Token] {
     val buf = new Array[Char](1)
     val result = new Buffer()
 
@@ -83,6 +92,7 @@ object DFA {
       breakable {
         while (hasNext) {
           assert(state != null)
+
           if (state.transitions contains letter) {
             result append letter
             state = state.transitions(letter)

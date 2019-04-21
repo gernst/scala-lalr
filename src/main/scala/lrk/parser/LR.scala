@@ -80,17 +80,21 @@ object LR {
     while (!todo.isEmpty) {
       val state = todo.dequeue
 
-      /* Try to merge this state with an existing one, max. one candidate */
       val that = states find (_.core == state.core)
 
       that match {
         case Some(that) if that canMerge state =>
-          /* Merge items */
-          that.kernel ++= state.kernel
-          that.items ++= state.items
+          if (state.kernel subsetOf that.kernel) {
+            /* Nothing to add */
+          } else {
+            /* Merge items */
+            that.kernel ++= state.kernel
+            that.items ++= state.items
+          }
+
           that.merged += state
 
-          /* Fix transitions from the previous state */
+          /* Fix transitions from state's predecessor */
           if (state.prev != null) {
             for ((symbol, `state`) <- state.prev.transitions) {
               state.prev.transitions(symbol) = that
@@ -101,7 +105,7 @@ object LR {
           number += 1
           state.number = number
           states += state
-          todo ++= state.successors
+          todo ++= state.succ
       }
     }
 
@@ -114,8 +118,8 @@ object LR {
   def reduce(a: Int => Any, rindex: List[Int], apply: Any) = (rindex, apply) match {
     case (List(), f: Any) => f
     case (List(i0), f: Function1[Any, Any] @unchecked) => f(a(i0))
-    case (List(i0, i1), f: Function2[Any, Any, Any] @unchecked) => f(a(i0), a(i1))
-    case (List(i0, i1, i2), f: Function3[Any, Any, Any, Any] @unchecked) => f(a(i0), a(i1), a(i2))
+    case (List(i1, i0), f: Function2[Any, Any, Any] @unchecked) => f(a(i0), a(i1))
+    case (List(i2, i1, i0), f: Function3[Any, Any, Any, Any] @unchecked) => f(a(i0), a(i1), a(i2))
   }
 
   def parse(in: Iterator[Token], init: State, annotate: Boolean = false): Any = {
@@ -124,7 +128,7 @@ object LR {
 
     var pos = 0
     def unpack(n: Int) = results(n).asInstanceOf[Tree].value
-    def get(n: Int) = if (annotate) unpack(n) else results(n)
+    def get(i: Int, n: Int) = if (annotate) unpack(n - i - 1) else results(n - i - 1)
     def next() = if (in.hasNext) in.next else Token(End, null, Range(pos, 0))
     var token = next()
 
@@ -132,8 +136,8 @@ object LR {
 
     while (true) {
       val state = states.top
-      // println("in state: " + state.number)
-      // println("results:  " + results)
+      println("in state: " + state.number)
+      println("results:  " + results)
 
       val action = state.table action token.symbol
 
@@ -143,10 +147,11 @@ object LR {
           return results.pop
 
         case Reject =>
+          println(state.dump)
           sys.error("unexpected symbol: " + token.symbol)
 
         case Shift(state) =>
-          // println("shift " + token)
+          println("shift " + token)
           val result = token.text
 
           val value = if (annotate) {
@@ -163,10 +168,10 @@ object LR {
 
         case Reduce(rule) =>
           val arity = rule.rhs.length
-          // println("reduce " + rule)
+          println("reduce " + rule)
           assert(rule.rindex forall (_ < arity))
 
-          val result = reduce(get, rule.rindex, rule.apply)
+          val result = reduce(get(_, arity), rule.rindex, rule.apply)
 
           val value = if (annotate) {
             val args = List.tabulate(arity)(i => results(arity - 1 - i).asInstanceOf[Tree])

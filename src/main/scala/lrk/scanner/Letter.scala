@@ -4,7 +4,8 @@ import scala.collection.immutable.BitSet
 
 object Letter {
   def isPrintable(i: Letter) = {
-    Char.MinValue <= i && i <= Char.MaxValue && (i.toChar.isLetter || i.toChar.isDigit)
+    32 <= i && i < 128
+    // Char.MinValue <= i && i <= Char.MaxValue && (i.toChar.isLetter || i.toChar.isDigit)
   }
   def fmt(i: Letter): String = {
     if (isPrintable(i)) i.toChar.toString

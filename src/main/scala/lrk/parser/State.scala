@@ -33,7 +33,7 @@ class State(val kernel: mutable.Set[Item], val prev: State, val grammar: Grammar
   val core = kernel map (_.core)
   val merged = mutable.Set[State]()
 
-  def successors = {
+  def succ = {
     transitions map { case (_, next) => next }
   }
 
