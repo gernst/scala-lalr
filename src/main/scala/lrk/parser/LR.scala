@@ -36,7 +36,7 @@ case class Table(action: Terminal => Action, goto: NonTerminal => State) {
 
 object LR {
   var debug = false
-  
+
   def translate(init: Parser[_]): Grammar = {
     val rules = mutable.ListBuffer[Rule]()
 
@@ -95,25 +95,17 @@ object LR {
         val that = states find (_.core == state.core)
 
         that match {
-          case Some(that) if state canMerge that =>
+          case Some(that) /* if state canMerge that */ =>
             val changed = that merge state
 
             if (changed) {
               incomplete += that
-              // that.recompute()
-              // todo ++= state.succ
             }
-          // states -= that
-          // assert(!changed)
 
           case _ =>
             number += 1
             state.number = number
             incomplete += state
-            // states += state
-
-            // state.computeTransitions()
-            // todo ++= state.succ
         }
       }
     }
@@ -145,8 +137,8 @@ object LR {
 
     while (true) {
       val state = states.top
-      if(debug) println("in state: " + state.number)
-      if(debug) println("results:  " + results)
+      if (debug) println("in state: " + state.number)
+      if (debug) println("results:  " + results)
 
       val action = state.table action token.symbol
 
@@ -156,11 +148,11 @@ object LR {
           return results.pop
 
         case Reject =>
-          if(debug) println(state.dump)
+          if (debug) println(state.dump)
           sys.error("unexpected symbol: " + token.symbol)
 
         case Shift(state) =>
-          if(debug) println("shift " + token)
+          if (debug) println("shift " + token)
           val result = token.text
 
           val value = if (annotate) {
@@ -177,7 +169,7 @@ object LR {
 
         case Reduce(rule) =>
           val arity = rule.rhs.length
-          if(debug) println("reduce " + rule)
+          if (debug) println("reduce " + rule)
           assert(rule.rindex forall (_ < arity))
 
           val result = reduce(get(_, arity), rule.rindex, rule.apply)

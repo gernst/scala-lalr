@@ -6,9 +6,17 @@ import lrk.scanner.Letters
 
 object test {
   sealed trait Expr
-  case class Id(name: String) extends Expr
-  case class Num(x: Int) extends Expr
-  case class App(fun: String, args: List[Expr]) extends Expr
+  case class Id(name: String) extends Expr {
+    override def toString = name
+  }
+
+  case class Num(x: Int) extends Expr {
+    override def toString = x.toString
+  }
+
+  case class App(fun: String, args: List[Expr]) extends Expr {
+    override def toString = fun + args.mkString("(", ",", ")")
+  }
 
   object Unary extends ((String, Expr) => Expr) {
     def apply(fun: String, arg: Expr) = App(fun, List(arg))
@@ -43,18 +51,22 @@ object test {
     val app = App(name ~ lparen ~ exprs ~ rparen)
     val op = Unary(minus ~ expr) | Binary(expr ~ minus ~ expr) | Binary(expr ~ plus ~ expr) | Binary(expr ~ star ~ expr)
     val parens = lparen ~ expr ~ rparen
-    
+
     val small: Parser[Expr] = P(id | (lparen ~ small ~ rparen))
   }
 
   def main(args: Array[String]) {
     val scanner = Scanner(mode)
     val parser = grammar.expr
-    println("parser has " + parser.states.length + " states")
+    val start = System.currentTimeMillis
+    val init = parser.init
+    val end = System.currentTimeMillis
+    println("states: " + parser.states.length)
+    println("time:   " + (end - start) + "ms")
     for (state <- parser.states) {
-      println(state.dump)
+       println(state.dump)
     }
-    println("-------------------------------")
+    // println("-------------------------------")
     val in = scanner.scan("(a+-f(a,b,c)*3*-1+---a)")
     val result = parser.parse(in)
     println(result)

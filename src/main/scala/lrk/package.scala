@@ -29,6 +29,10 @@ package object lrk {
     }
   }
 
+  implicit class StringRegexConversion(pat: String) {
+    def re = Regex(pat)
+  }
+
   implicit class Constr0[Z](f: Z) {
     def apply(p: Recognizer): Parser[Z] = p map f
     def apply(p: Sequence.of0): Parser[Z] = p map f

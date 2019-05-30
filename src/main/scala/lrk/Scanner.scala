@@ -185,6 +185,7 @@ object Regex {
       case _ => e + "*"
     }
   }
+  
   case class not(e: Regex) extends Regex {
     def first = {
       Letters.alphabet -- e.first
@@ -203,6 +204,7 @@ object Regex {
       case _ => "~(" + e.toString + ")"
     }
   }
+
   case class any(es: Set[Regex]) extends Regex {
     def first = {
       es.foldLeft(Letters.empty)(_ | _.first)
@@ -247,11 +249,11 @@ object Regex {
   def seq(es: Iterable[Regex]): Regex = {
     es.foldRight(epsilon)(_ ~ _)
   }
-
-  def letters(s: String): Regex = {
-    val bs = s.getBytes
-    seq(bs.map(b => letters(b)))
-  }
+  
+  // def letters(s: String): Regex = {
+  //   val bs = s.getBytes
+  //   seq(bs.map(b => letters(b)))
+  // }
 
   def ors(e: Regex): Set[Regex] = e match {
     case any(es) => es flatMap ors

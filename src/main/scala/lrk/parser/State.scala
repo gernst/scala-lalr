@@ -88,7 +88,6 @@ class State(val kernel: mutable.Set[Item], val prev: State, val grammar: Grammar
 
   /** Merge two sets of actions, avoiding shift/reduce and reduce/reduce conflicts */
   def resolve(t: Terminal, shift: Iterable[Action], reduce: Iterable[Action]): Action = {
-    // XX: consider precedence here
     assert(shift.size <= 1)
     assert(reduce.size <= 1)
     val maybeShift = shift.headOption

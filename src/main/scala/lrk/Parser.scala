@@ -38,6 +38,22 @@ sealed trait Parser[+A] extends Parseable {
     this :: (sep ~ this).+
   }
 
+  def reduceLeft[B >: A](f: (B, A) => B): Parser[B] = {
+    this.+ map { (as: List[A]) => as.reduceLeft(f) }
+  }
+
+  def reduceRight[B >: A](f: (A, B) => B): Parser[B] = {
+    this.+ map { (as: List[A]) => as.reduceRight(f) }
+  }
+
+  def foldLeft[B](z: => Parser[B])(f: (B, A) => B): Parser[B] = {
+    (z ~ this.*) map { (b: B, as: List[A]) => as.foldLeft(b)(f) }
+  }
+
+  def foldRight[B](z: => Parser[B])(f: (A, B) => B): Parser[B] = {
+    (this.* ~ z) map { (b: B, as: List[A]) => as.foldRight(b)(f) }
+  }
+
   lazy val (init, states) = {
     LR.states(LR.translate(this))
   }
@@ -111,6 +127,8 @@ object Recognizer {
     override def toString = "_"
   }
 
+  case class apply0[Z](apply: () => Z, rparsers: List[Parseable], collapse: Boolean) extends Recognizer with Apply { def rindex = Nil }
+
   case class regex(re: Regex, fixity: Fixity) extends Recognizer with WithRegex {
     override def toString = "'" + re + "'"
   }
@@ -159,7 +177,7 @@ object Parser {
     override def toString = "(" + left + " | " + right + ")"
   }
 
-  case class apply0[Z](apply: Z, rparsers: List[Parseable], collapse: Boolean) extends Parser[Z] with Apply { def rindex = Nil }
+  case class apply0[Z](apply: () => Z, rparsers: List[Parseable], collapse: Boolean) extends Parser[Z] with Apply { def rindex = Nil }
   case class apply1[A, Z](apply: (A) => Z, rindex: List[Int], rparsers: List[Parseable], collapse: Boolean) extends Parser[Z] with Apply
   case class apply2[A, B, Z](apply: (A, B) => Z, rindex: List[Int], rparsers: List[Parseable], collapse: Boolean) extends Parser[Z] with Apply
   case class apply3[A, B, C, Z](apply: (A, B, C) => Z, rindex: List[Int], rparsers: List[Parseable], collapse: Boolean) extends Parser[Z] with Apply
@@ -169,8 +187,8 @@ object Sequence {
   case class of0(rparsers: List[Parseable]) {
     def ~(p: Recognizer) = of0(p :: rparsers)
     def ~[A](p: Parser[A]) = of1[A](List(rparsers.length), p :: rparsers)
-    def map[Z](f: Z): Parser[Z] = Parser.apply0(f, rparsers, false)
-    def flatMap[Z](f: Z): Parser[Z] = Parser.apply0(f, rparsers, true)
+    def map[Z](f: => Z): Parser[Z] = Parser.apply0(() => f, rparsers, false)
+    def flatMap[Z](f: => Z): Parser[Z] = Parser.apply0(() => f, rparsers, true)
   }
 
   case class of1[+A](rindex: List[Int], rparsers: List[Parseable]) extends Parser[A] with Apply {
