@@ -1,14 +1,14 @@
-package lrk
+package lalr
 
 import java.io.Reader
 
 import scala.collection.mutable
 
-import lrk.scanner.DFA
-import lrk.scanner.Letter
-import lrk.scanner.Letters
-import lrk.util.Fixity
-import lrk.util.Terminal
+import lalr.scanner.DFA
+import lalr.scanner.Letter
+import lalr.scanner.Letters
+import lalr.util.Fixity
+import lalr.util.Terminal
 import java.io.StringReader
 import java.io.File
 import java.io.FileReader

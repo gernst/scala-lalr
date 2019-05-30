@@ -1,9 +1,9 @@
-package lrk.scanner
+package lalr.scanner
 
 import scala.collection.mutable
 
-import lrk.Regex
-import lrk.util.Terminal
+import lalr.Regex
+import lalr.util.Terminal
 
 case class Item(lhs: Terminal, rhs: Regex) {
   def first = rhs.first

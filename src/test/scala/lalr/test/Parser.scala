@@ -1,9 +1,9 @@
-package lrk.test
+package lalr.test
 
 import scala.language.postfixOps
 
-import lrk._
-import lrk.parser.LR
+import lalr._
+import lalr.parser.LR
 
 object parser {
   sealed trait Expr

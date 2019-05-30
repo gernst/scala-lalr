@@ -1,14 +1,14 @@
-package lrk.parser
+package lalr.parser
 
 import scala.collection.mutable
 
-import lrk.util.Fixity
-import lrk.util.Left
-import lrk.util.Non
-import lrk.util.NonTerminal
-import lrk.util.Right
-import lrk.util.Symbol
-import lrk.util.Terminal
+import lalr.util.Fixity
+import lalr.util.Left
+import lalr.util.Non
+import lalr.util.NonTerminal
+import lalr.util.Right
+import lalr.util.Symbol
+import lalr.util.Terminal
 
 case class Item(lhs: NonTerminal, rdone: List[Symbol], todo: List[Symbol], look: Set[Terminal]) {
   def canReduce = todo.isEmpty

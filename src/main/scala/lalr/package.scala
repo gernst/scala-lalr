@@ -1,6 +1,6 @@
 import scala.language.implicitConversions
 
-package object lrk {
+package object lalr {
   def S[A](init: Mode, other: Mode*) = {
     Scanner(init, other: _*)
   }

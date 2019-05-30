@@ -1,4 +1,4 @@
-package lrk.scanner
+package lalr.scanner
 
 import scala.collection.immutable.BitSet
 

@@ -1,4 +1,4 @@
-package lrk.util
+package lalr.util
 
 object Buffer {
   val minimalSize = 4

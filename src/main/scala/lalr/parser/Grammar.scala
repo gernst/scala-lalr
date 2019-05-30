@@ -1,10 +1,10 @@
-package lrk.parser
+package lalr.parser
 
-import lrk.util.Digraph
-import lrk.util.Fixity
-import lrk.util.NonTerminal
-import lrk.util.Symbol
-import lrk.util.Terminal
+import lalr.util.Digraph
+import lalr.util.Fixity
+import lalr.util.NonTerminal
+import lalr.util.Symbol
+import lalr.util.Terminal
 
 case object End extends Terminal {
   def fixity = Fixity.default

@@ -1,4 +1,4 @@
-package lrk
+package lalr
 
 package object parser {
   def id[A](a: A): A = a

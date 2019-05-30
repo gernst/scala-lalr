@@ -1,11 +1,11 @@
-package lrk
+package lalr
 
-import lrk.parser.LR
-import lrk.parser.Rule
-import lrk.util.NonTerminal
-import lrk.util.Symbol
-import lrk.util.Terminal
-import lrk.util.Fixity
+import lalr.parser.LR
+import lalr.parser.Rule
+import lalr.util.NonTerminal
+import lalr.util.Symbol
+import lalr.util.Terminal
+import lalr.util.Fixity
 
 sealed trait Parseable {
   def normalize: List[List[Atomic]]
@@ -193,7 +193,7 @@ object Sequence {
 
   case class of1[+A](rindex: List[Int], rparsers: List[Parseable]) extends Parser[A] with Apply {
     assert(rindex.length == 1)
-    def apply = lrk.parser.id[Any] _
+    def apply = lalr.parser.id[Any] _
     def collapse = true
     def ~(p: Recognizer) = of1[A](rindex, p :: rparsers)
     def ~[B](p: Parser[B]) = of2[A, B](rparsers.length :: rindex, p :: rparsers)

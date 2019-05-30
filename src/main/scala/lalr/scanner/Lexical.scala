@@ -1,8 +1,8 @@
-package lrk.scanner
+package lalr.scanner
 
-import lrk.Regex
-import lrk.util.Terminal
-import lrk.util.Fixity
+import lalr.Regex
+import lalr.util.Terminal
+import lalr.util.Fixity
 
 case object Whitespace extends Terminal {
   def fixity = Fixity.default

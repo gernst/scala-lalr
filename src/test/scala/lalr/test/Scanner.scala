@@ -1,8 +1,8 @@
-package lrk.test
+package lalr.test
 
-import lrk._
+import lalr._
 import java.io.StringReader
-import lrk.util.Fixity
+import lalr.util.Fixity
 
 object scanner {
   def main(args: Array[String]) {

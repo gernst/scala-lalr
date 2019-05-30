@@ -1,7 +1,7 @@
-package lrk.util
+package lalr.util
 
-import lrk._
-import lrk.scanner.Letters
+import lalr._
+import lalr.scanner.Letters
 
 object regex {
   trait Common {

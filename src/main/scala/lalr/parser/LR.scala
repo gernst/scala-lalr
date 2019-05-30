@@ -1,17 +1,17 @@
-package lrk.parser
+package lalr.parser
 
 import scala.collection.mutable
 
-import lrk.Leaf
-import lrk.Node
-import lrk.Parser
-import lrk.Range
-import lrk.Token
-import lrk.Tree
-import lrk.WithRules
-import lrk.util.NonTerminal
-import lrk.util.Stack
-import lrk.util.Terminal
+import lalr.Leaf
+import lalr.Node
+import lalr.Parser
+import lalr.Range
+import lalr.Token
+import lalr.Tree
+import lalr.WithRules
+import lalr.util.NonTerminal
+import lalr.util.Stack
+import lalr.util.Terminal
 
 sealed trait Action
 

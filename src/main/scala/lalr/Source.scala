@@ -1,4 +1,4 @@
-package lrk
+package lalr
 
 import scala.annotation.tailrec
 

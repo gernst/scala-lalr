@@ -1,15 +1,15 @@
-package lrk.scanner
+package lalr.scanner
 
 import java.io.Reader
 
 import scala.collection.mutable
 import scala.util.control.Breaks._
 
-import lrk.Range
-import lrk.Scanner
-import lrk.Token
-import lrk.util.Buffer
-import lrk.Mode
+import lalr.Range
+import lalr.Scanner
+import lalr.Token
+import lalr.util.Buffer
+import lalr.Mode
 import scala.annotation.tailrec
 
 object DFA {

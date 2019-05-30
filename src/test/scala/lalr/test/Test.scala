@@ -1,8 +1,8 @@
-package lrk.test
+package lalr.test
 
-import lrk._
-import lrk.util._
-import lrk.scanner.Letters
+import lalr._
+import lalr.util._
+import lalr.scanner.Letters
 
 object test {
   sealed trait Expr
