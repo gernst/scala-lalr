@@ -288,7 +288,8 @@ class Mode {
   }
 
   def ignore(re: Regex) {
-    whitespace += re
+    if (!(whitespace contains re))
+      whitespace += re
   }
 
   def ignore(pat: String) {
@@ -297,17 +298,19 @@ class Mode {
 
   def accept(re: Regex, fixity: Fixity): Recognizer = {
     val recognizer = Recognizer.regex(re, fixity)
-    regexps += recognizer
+    if (!(regexps contains recognizer))
+      regexps += recognizer
     recognizer
   }
 
   def accept(pat: String, fixity: Fixity = Fixity.default): Recognizer = {
     accept(Regex(pat), fixity)
   }
-
+  
   def literal(re: Regex, fixity: Fixity): Parser[String] = {
     val parser = Parser.regex(re, fixity)
-    regexps += parser
+    if (!(regexps contains parser))
+      regexps += parser
     parser
   }
 

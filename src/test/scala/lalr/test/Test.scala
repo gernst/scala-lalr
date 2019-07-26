@@ -65,7 +65,7 @@ object test {
     println("states: " + parser.states.length)
     println("time:   " + (end - start) + "ms")
     for (state <- parser.states) {
-       println(state.dump)
+      println(state.dump)
     }
     // println("-------------------------------")
     val in = scanner.scan("(a+-f(a,b,c)*3*-1+---a)")
