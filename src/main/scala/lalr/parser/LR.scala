@@ -12,6 +12,7 @@ import lalr.WithRules
 import lalr.util.NonTerminal
 import lalr.util.Stack
 import lalr.util.Terminal
+import lalr.Position
 
 sealed trait Action
 
@@ -127,10 +128,13 @@ object LR {
     val states = new Stack[State]()
     val results = new Stack[Any]()
 
-    var pos = 0
+    var length = 0
+    var line = 0
+    var column = 0
+
     def unpack(n: Int) = results(n).asInstanceOf[Tree].value
     def get(i: Int, n: Int) = if (annotate) unpack(n - i - 1) else results(n - i - 1)
-    def next() = if (in.hasNext) in.next else Token(End, null, Range(pos, 0))
+    def next() = if (in.hasNext) in.next else Token(End, null, Range(length, 0), Position(line, column))
     var token = next()
 
     states push init
@@ -157,8 +161,11 @@ object LR {
 
           val value = if (annotate) {
             val range = token.range
-            pos = range.end
-            Leaf(result, range)
+            val position = token.position
+            length = range.end
+            line = position.line
+            column = position.column
+            Leaf(result, range, position)
           } else {
             result
           }

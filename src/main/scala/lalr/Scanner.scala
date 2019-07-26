@@ -1,6 +1,9 @@
 package lalr
 
+import java.io.File
+import java.io.FileReader
 import java.io.Reader
+import java.io.StringReader
 
 import scala.collection.mutable
 
@@ -9,11 +12,8 @@ import lalr.scanner.Letter
 import lalr.scanner.Letters
 import lalr.util.Fixity
 import lalr.util.Terminal
-import java.io.StringReader
-import java.io.File
-import java.io.FileReader
 
-case class Token(symbol: Terminal, text: String, range: Range)
+case class Token(symbol: Terminal, text: String, range: Range, position: Position)
 
 sealed trait Regex {
   import Regex._
@@ -185,7 +185,7 @@ object Regex {
       case _ => e + "*"
     }
   }
-  
+
   case class not(e: Regex) extends Regex {
     def first = {
       Letters.alphabet -- e.first
@@ -249,7 +249,7 @@ object Regex {
   def seq(es: Iterable[Regex]): Regex = {
     es.foldRight(epsilon)(_ ~ _)
   }
-  
+
   // def letters(s: String): Regex = {
   //   val bs = s.getBytes
   //   seq(bs.map(b => letters(b)))

@@ -3,14 +3,15 @@ package lalr.scanner
 import java.io.Reader
 
 import scala.collection.mutable
-import scala.util.control.Breaks._
+import scala.util.control.Breaks.break
+import scala.util.control.Breaks.breakable
 
+import lalr.Mode
+import lalr.Position
 import lalr.Range
 import lalr.Scanner
 import lalr.Token
 import lalr.util.Buffer
-import lalr.Mode
-import scala.annotation.tailrec
 
 object DFA {
   def translate(mode: Mode): Lexical = {
@@ -73,11 +74,21 @@ object DFA {
     var letter: Char = _
     var atEof: Boolean = _
 
+    var line = 0
+    var column = 0
+
     step()
 
     def step() {
       atEof = (in.read(buf) < 0)
       letter = buf(0)
+
+      if (letter == '\n') {
+        line += 1
+        column = 0
+      } else {
+        column += 1
+      }
     }
 
     def hasNext = {
@@ -112,9 +123,9 @@ object DFA {
           val text = result shift length
           val symbols = state.canAccept
           val range = Range(start, length)
-
+          val position = Position(line, column)
           start += length
-          Token(symbols.head, text, range)
+          Token(symbols.head, text, range, position)
         case None if hasNext =>
           sys.error("unexpected character " + Letter.fmt(letter))
         case None =>

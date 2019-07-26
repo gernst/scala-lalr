@@ -44,12 +44,13 @@ object test {
 
   object grammar {
     import mode._
-    val expr: Parser[Expr] = P(id | app | op | lit | parens)
+    val expr: Parser[Expr] = P(id | app | unary | binary | lit | parens)
     val exprs = expr ~* comma
     val id = Id(name)
     val lit = Num(number)
     val app = App(name ~ lparen ~ exprs ~ rparen)
-    val op = Unary(minus ~ expr) | Binary(expr ~ minus ~ expr) | Binary(expr ~ plus ~ expr) | Binary(expr ~ star ~ expr)
+    val unary = Unary(minus ~ expr)
+    val binary = Binary(expr ~ minus ~ expr) | Binary(expr ~ plus ~ expr) | Binary(expr ~ star ~ expr)
     val parens = lparen ~ expr ~ rparen
 
     val small: Parser[Expr] = P(id | (lparen ~ small ~ rparen))

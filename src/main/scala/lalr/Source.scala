@@ -2,6 +2,8 @@ package lalr
 
 import scala.annotation.tailrec
 
+case class Position(line: Int, column: Int)
+
 object Position {
   def find(pos: Int, path: List[Tree]) = {
     down(pos, up(pos, path))
@@ -73,8 +75,7 @@ sealed trait Tree {
   def children: List[Tree]
 }
 
-case class Leaf(value: Any, location: Range) extends Tree {
-  def range = location
+case class Leaf(value: Any, range: Range, position: Position) extends Tree {
   def children = Nil
 }
 
