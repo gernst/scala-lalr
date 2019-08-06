@@ -118,7 +118,7 @@ object LR {
   }
 
   def reduce(a: Int => Any, rindex: List[Int], apply: Any) = (rindex, apply) match {
-    case (List(), f: Any) => f
+    case (List(), f: Function0[Any] @unchecked) => f()
     case (List(i0), f: Function1[Any, Any] @unchecked) => f(a(i0))
     case (List(i1, i0), f: Function2[Any, Any, Any] @unchecked) => f(a(i0), a(i1))
     case (List(i2, i1, i0), f: Function3[Any, Any, Any, Any] @unchecked) => f(a(i0), a(i1), a(i2))
