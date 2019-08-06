@@ -36,11 +36,11 @@ object parser {
 
   def main(args: Array[String]) {
     val inputs = Seq(
-      Seq(Token(x, "x", Range(0, 1))),
-      Seq(Token(lparen, "(", Range(0, 1)), Token(x, "x", Range(1, 1)), Token(y, "y", Range(2, 1)), Token(rparen, ")", Range(3, 1))))
+      Tokens("x" -> x),
+      Tokens("(" -> lparen, "x" -> x, "y" -> y, ")" -> rparen))
 
     for (input <- inputs) {
-      val result = expr.parseTree(input)
+      val result = expr.parse(input)
       println("input:  " + input.mkString(" "))
       println("result: " + result)
       println()

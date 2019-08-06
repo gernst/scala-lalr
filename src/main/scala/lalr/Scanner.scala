@@ -15,6 +15,19 @@ import lalr.util.Terminal
 
 case class Token(symbol: Terminal, text: String, range: Range, position: Position)
 
+object Tokens {
+  def apply(tokens: (String, Terminal)*) = {
+    var pos = 0
+    for((text, symbol) <- tokens) yield {
+      val range = Range(pos, text.length)
+      val position = Position(0, pos)
+      val token = Token(symbol, text, range, position)
+      pos += text.length
+      token
+    }
+  }
+}
+
 sealed trait Regex {
   import Regex._
 
@@ -339,17 +352,17 @@ case class Scanner(init: Mode, other: Mode*) {
   var mode: Mode = init
   def state = mode.state
 
+  def compile(mode: Mode) {
+    val (init, states) = DFA.states(DFA.translate(mode))
+    mode.state = init
+  }
+
   def scan(text: String): Iterator[Token] = {
     scan(new StringReader(text))
   }
 
   def scan(file: File): Iterator[Token] = {
     scan(new FileReader(file))
-  }
-
-  def compile(mode: Mode) {
-    val (init, states) = DFA.states(DFA.translate(mode))
-    mode.state = init
   }
 
   def scan(in: Reader): Iterator[Token] = {

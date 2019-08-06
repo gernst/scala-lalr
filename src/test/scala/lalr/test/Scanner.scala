@@ -13,8 +13,7 @@ object scanner {
     val z = mode.map(Regex.letters('z'), _.length, Fixity.default)
 
     val scanner = Scanner(mode)
-    val in = new StringReader("uxyz")
-    val tokens = scanner scan in
+    val tokens = scanner scan "uxyz"
     println(tokens.toList)
   }
 }
