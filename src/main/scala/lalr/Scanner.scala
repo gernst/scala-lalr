@@ -11,6 +11,7 @@ import lalr.scanner.DFA
 import lalr.scanner.Letter
 import lalr.scanner.Letters
 import lalr.util.Fixity
+import lalr.util.Generate
 import lalr.util.Terminal
 
 case class Token(symbol: Terminal, text: String, range: Range, position: Position)
@@ -369,6 +370,18 @@ case class Scanner(init: Mode, other: Mode*) {
     compile(init)
     for (mode <- other) compile(mode)
     DFA.scan(in, this)
+  }
+
+  def generate(dir: String, pkg: String, klass: String) {
+    val name = pkg + "." + klass
+    val out = Generate.open(dir, name)
+    out.println("package " + pkg)
+    out.println()
+    out.println("class " + klass + " {")
+    out.println("  var state: lalr.scanner.State = _")
+    out.println("}")
+    out.flush
+    out.close
   }
 }
 

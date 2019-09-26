@@ -11,6 +11,13 @@ case class Item(lhs: Terminal, rhs: Regex) {
   def accepts = rhs.isNullable
 }
 
+trait State_ {
+  def number: Int
+  def transitions: Map[Long, State]
+  def accepts: Boolean
+  def canAccept: List[Symbol]
+}
+
 class State(val items: List[Item], val prev: State) {
   var number = 0
 
@@ -42,8 +49,8 @@ class State(val items: List[Item], val prev: State) {
     }
     result
   }
-  
-    override def toString = "state " + number
+
+  override def toString = "state " + number
 
   def dump = {
     var res = this + "\n"

@@ -35,7 +35,7 @@ case class Reduce(rule: Rule) extends Action {
 case class Table(action: Terminal => Action, goto: NonTerminal => State) {
 }
 
-object LR {
+object LALR {
   var debug = false
 
   def translate(init: Parser[_]): Grammar = {

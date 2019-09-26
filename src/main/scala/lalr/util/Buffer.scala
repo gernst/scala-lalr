@@ -5,7 +5,7 @@ object Buffer {
 }
 
 class Buffer {
-  var buf = new Array[Char](Stack.minimalSize)
+  var buf = new Array[Char](Buffer.minimalSize)
 
   var end = 0
   def length = end

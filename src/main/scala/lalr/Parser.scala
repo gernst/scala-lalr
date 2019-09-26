@@ -1,6 +1,6 @@
 package lalr
 
-import lalr.parser.LR
+import lalr.parser.LALR
 import lalr.parser.Rule
 import lalr.util.NonTerminal
 import lalr.util.Symbol
@@ -55,7 +55,7 @@ sealed trait Parser[+A] extends Parseable {
   }
 
   lazy val (init, states) = {
-    LR.states(LR.translate(this))
+    LALR.states(LALR.translate(this))
   }
 
   def parse(in: Iterable[Token]): A = {
@@ -63,7 +63,7 @@ sealed trait Parser[+A] extends Parseable {
   }
 
   def parse(in: Iterator[Token]): A = {
-    LR.parse(in, init, false).asInstanceOf[A]
+    LALR.parse(in, init, false).asInstanceOf[A]
   }
 
   def parseTree(in: Iterable[Token]): Node = {
@@ -71,7 +71,7 @@ sealed trait Parser[+A] extends Parseable {
   }
 
   def parseTree(in: Iterator[Token]): Node = {
-    LR.parse(in, init, true).asInstanceOf[Node]
+    LALR.parse(in, init, true).asInstanceOf[Node]
   }
 }
 

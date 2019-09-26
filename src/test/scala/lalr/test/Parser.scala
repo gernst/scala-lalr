@@ -3,7 +3,7 @@ package lalr.test
 import scala.language.postfixOps
 
 import lalr._
-import lalr.parser.LR
+import lalr.parser.LALR
 
 object parser {
   sealed trait Expr
@@ -20,8 +20,8 @@ object parser {
   val many = Many(lparen ~ (expr *) ~ rparen)
 
   def debug() {
-    val grammar = LR.translate(expr)
-    val (init, states) = LR.states(grammar)
+    val grammar = LALR.translate(expr)
+    val (init, states) = LALR.states(grammar)
     println()
 
     val sorted = states.toList.sortBy(_.number)

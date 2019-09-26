@@ -1,12 +1,11 @@
-# Scala LR(k)
+# Scala LRALR
 
-LR(k) parser library for Scala.
+LRALR(1) parser library for Scala.
 
-Simple API, powerful parsing algorithm.
+Simple API, nice and powerful parsing algorithm.
 
 TODO:
 
-- precedences
-- scanner functionality
+- fix some bugs to make it work actually
 - unit tests
 - examples

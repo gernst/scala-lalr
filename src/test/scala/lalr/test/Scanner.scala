@@ -15,5 +15,7 @@ object scanner {
     val scanner = Scanner(mode)
     val tokens = scanner scan "uxyz"
     println(tokens.toList)
+    
+    scanner.generate("src/generated/scala", "lalr.test", "Scanner")
   }
 }
