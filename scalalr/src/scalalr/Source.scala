@@ -5,6 +5,8 @@ import scala.annotation.tailrec
 case class Position(line: Int, column: Int)
 
 object Position {
+  val empty = Position(0, 0)
+
   def find(pos: Int, path: List[Tree]) = {
     down(pos, up(pos, path))
   }
@@ -44,6 +46,10 @@ case class Range(start: Int, length: Int) {
 
   def end = {
     start + length
+  }
+  
+  def after = {
+    Range(end, 0)
   }
 
   def +(shift: Int) = {

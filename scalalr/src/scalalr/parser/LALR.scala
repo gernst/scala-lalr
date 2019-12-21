@@ -46,7 +46,7 @@ object LALR {
 
     val top = init match {
       case init: WithRules => init
-      case _ => sys.error("not a top-level parser: " + init)
+      case _ => throw new IllegalArgumentException("not a top-level parser: " + init)
     }
     todo enqueue top
 
@@ -128,13 +128,12 @@ object LALR {
     val states = new Stack[State]()
     val results = new Stack[Any]()
 
-    var length = 0
-    var line = 0
-    var column = 0
+    var range = Range.empty
+    var position = Position.empty
 
     def unpack(n: Int) = results(n).asInstanceOf[Tree].value
     def get(i: Int, n: Int) = if (annotate) unpack(n - i - 1) else results(n - i - 1)
-    def next() = if (in.hasNext) in.next else Token(End, null, Range(length, 0), Position(line, column))
+    def next() = if (in.hasNext) in.next else Token(End, null, range.after, position)
     var token = next()
 
     states push init
@@ -153,18 +152,15 @@ object LALR {
 
         case Reject =>
           if (debug) println(state.dump)
-          sys.error("unexpected symbol: " + token.symbol)
+          throw UnexpectedSymbol(token.symbol, token.position)
 
         case Shift(state) =>
           if (debug) println("shift " + token)
           val result = token.text
 
           val value = if (annotate) {
-            val range = token.range
-            val position = token.position
-            length = range.end
-            line = position.line
-            column = position.column
+            range = token.range
+            position = token.position
             Leaf(result, range, position)
           } else {
             result

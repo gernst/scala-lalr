@@ -60,7 +60,7 @@ object DFA {
   }
 
   /**
-   * Scan longest prefix of cs from a state.
+   * Scan longest prefix of input from current state.
    */
   def scan(in: Reader, scanner: Scanner) = {
     scanWithWhitespace(in, scanner) filterNot (_.symbol == Whitespace)
@@ -71,6 +71,7 @@ object DFA {
     val result = new Buffer()
 
     var start = 0
+    var chars = 0
     var letter: Char = _
     var atEof: Boolean = _
 
@@ -82,6 +83,7 @@ object DFA {
     def step() {
       atEof = (in.read(buf) < 0)
       letter = buf(0)
+      chars += 1
 
       if (letter == '\n') {
         line += 1
@@ -118,18 +120,19 @@ object DFA {
         }
       }
 
+      val position = Position(line, column)
+
       accepting match {
         case Some((state, length)) =>
           val text = result shift length
           val symbols = state.canAccept
           val range = Range(start, length)
-          val position = Position(line, column)
           start += length
           Token(symbols.head, text, range, position)
         case None if hasNext =>
-          sys.error("unexpected character " + Letter.fmt(letter))
+          throw UnexpectedChar(letter, position)
         case None =>
-          sys.error("unexpected end of input")
+          throw UnexpectedEof(position)
       }
     }
   }
