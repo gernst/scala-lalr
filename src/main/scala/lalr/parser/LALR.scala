@@ -32,7 +32,7 @@ case class Reduce(rule: Rule) extends Action {
   override def toString = "reduce " + rule
 }
 
-case class Table(action: Terminal => Action, goto: NonTerminal => State) {
+case class Table(action: Map[Terminal, Action], goto: Map[NonTerminal, State]) {
 }
 
 object LALR {
@@ -114,7 +114,7 @@ object LALR {
     for (state <- states)
       assert(state.table != null)
 
-    (init, states)
+    (init, states.distinct)
   }
 
   def reduce(a: Int => Any, rindex: List[Int], apply: Any) = (rindex, apply) match {

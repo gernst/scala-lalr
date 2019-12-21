@@ -44,7 +44,8 @@ class State(val kernel: mutable.Set[Item], val prev: State, val grammar: Grammar
   }
 
   def goto = {
-    transitions collect { case (n: NonTerminal, next) => (n, next) }
+    val result = transitions collect { case (n: NonTerminal, next) => (n, next) }
+    result.toMap
   }
 
   def action = {

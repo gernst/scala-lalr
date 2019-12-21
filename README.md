@@ -1,6 +1,6 @@
-# Scala LRALR
+# Scala LALR
 
-LRALR(1) parser library for Scala.
+LALR(1) parser library for Scala.
 
 Simple API, nice and powerful parsing algorithm.
 

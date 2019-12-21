@@ -63,6 +63,7 @@ object test {
     val init = parser.init
     val end = System.currentTimeMillis
     println("states: " + parser.states.length)
+    println("        " + parser.states.map(_.number))
     println("time:   " + (end - start) + "ms")
     for (state <- parser.states) {
       println(state.dump)
