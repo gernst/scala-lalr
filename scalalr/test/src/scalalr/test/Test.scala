@@ -3,6 +3,7 @@ package scalalr.test
 import scalalr._
 import scalalr.util._
 import scalalr.scanner.Letters
+import scalalr.parser.LALR
 
 object test {
   sealed trait Expr
@@ -59,14 +60,15 @@ object test {
   def main(args: Array[String]) {
     val scanner = Scanner(mode)
     val parser = grammar.expr
-    val start = System.currentTimeMillis
-    val init = parser.init
-    val end = System.currentTimeMillis
+    val gr = time("translate") { LALR.translate(parser) }
+    val init = time("states") { LALR.states(gr) }
+    println(scalalr.parser.timer.items)
+    println(scalalr.parser.timer.transitions)
+    println(scalalr.parser.timer.merge)
     println("states: " + parser.states.length)
     println("        " + parser.states.map(_.number))
-    println("time:   " + (end - start) + "ms")
     for (state <- parser.states) {
-      println(state.dump)
+      // println(state.dump)
     }
     // println("-------------------------------")
     val in = scanner.scan("(a+-f(a,b,c)*3*-1+---a)")

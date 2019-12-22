@@ -127,8 +127,6 @@ object Recognizer {
     override def toString = "_"
   }
 
-  case class apply0[Z](apply: () => Z, rparsers: List[Parseable], collapse: Boolean) extends Recognizer with Apply { def rindex = Nil }
-
   case class regex(re: Regex, fixity: Fixity) extends Recognizer with WithRegex {
     override def toString = "'" + re + "'"
   }
@@ -193,7 +191,7 @@ object Sequence {
 
   case class of1[+A](rindex: List[Int], rparsers: List[Parseable]) extends Parser[A] with Apply {
     assert(rindex.length == 1)
-    def apply = scalalr.parser.id[Any] _
+    def apply = scalalr.util.id[Any] _
     def collapse = true
     def ~(p: Recognizer) = of1[A](rindex, p :: rparsers)
     def ~[B](p: Parser[B]) = of2[A, B](rparsers.length :: rindex, p :: rparsers)

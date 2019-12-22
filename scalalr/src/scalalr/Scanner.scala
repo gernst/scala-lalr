@@ -11,6 +11,7 @@ import scalalr.scanner.DFA
 import scalalr.scanner.Letter
 import scalalr.scanner.Letters
 import scalalr.util.Fixity
+import scalalr.util.Set1
 import scalalr.util.Terminal
 
 case class Token(symbol: Terminal, text: String, range: Range, position: Position)

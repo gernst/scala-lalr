@@ -5,6 +5,7 @@ import scala.collection.mutable
 import scalalr.Leaf
 import scalalr.Node
 import scalalr.Parser
+import scalalr.Position
 import scalalr.Range
 import scalalr.Token
 import scalalr.Tree
@@ -12,7 +13,7 @@ import scalalr.WithRules
 import scalalr.util.NonTerminal
 import scalalr.util.Stack
 import scalalr.util.Terminal
-import scalalr.Position
+import scalalr.util.Timer
 
 sealed trait Action
 
@@ -79,25 +80,25 @@ object LALR {
     val init = new State(mutable.Set(start), null, grammar)
 
     incomplete enqueue init
-    init.computeItems()
+    timer.items { init.computeItems() }
 
     while (!incomplete.isEmpty) {
       val todo = mutable.Queue[State]()
 
       if (!incomplete.isEmpty) {
         val state = incomplete.dequeue
-        state.computeTransitions()
+        timer.transitions { state.computeTransitions() }
         todo ++= state.succ
         states += state
       }
 
       for (state <- todo) {
-        state.computeItems()
+        timer.items { state.computeItems() }
         val that = states find (_.core == state.core)
 
         that match {
           case Some(that) /* if state canMerge that */ =>
-            val changed = that merge state
+            val changed = timer.merge { that merge state }
 
             if (changed) {
               incomplete += that

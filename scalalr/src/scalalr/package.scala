@@ -16,13 +16,6 @@ package object scalalr {
     Recognizer.empty map a
   }
 
-  object Set1 {
-    def unapply[A](s: Set[A]) = {
-      if (s.size == 1) Some(s.head)
-      else None
-    }
-  }
-
   implicit class ListParser[A](ps: Parser[List[A]]) {
     def ::(p: Parser[A]) = (p ~ ps) flatMap {
       (a: A, as: List[A]) => a :: as

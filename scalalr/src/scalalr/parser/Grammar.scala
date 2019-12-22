@@ -5,6 +5,7 @@ import scalalr.util.Fixity
 import scalalr.util.NonTerminal
 import scalalr.util.Symbol
 import scalalr.util.Terminal
+import scalalr.util.id
 
 case object End extends Terminal {
   def fixity = Fixity.default
