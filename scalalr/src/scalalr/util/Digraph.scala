@@ -13,6 +13,22 @@ package scalalr.util
 object Digraph {
   import scala.collection.mutable
 
+  def fix[X](init: Iterable[X], succ: X => Iterable[X]): mutable.Set[X] = {
+    val todo = mutable.Queue[X]()
+    val result = mutable.Set[X]()
+    todo ++= init
+
+    while (!todo.isEmpty) {
+      val x = todo.dequeue
+      if (!(result contains x)) {
+        result += x
+        todo ++= succ(x)
+      }
+    }
+
+    result
+  }
+
   def digraph[X, A](states: Iterable[X], init: X => Iterable[A], succ: X => Iterable[X]): (X => mutable.Set[A]) = {
     val stack = mutable.Stack[X]()
     val depth = mutable.Map[X, Int]()

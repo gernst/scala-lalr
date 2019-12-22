@@ -24,18 +24,19 @@ object parser {
     val (init, states) = LALR.states(grammar)
     println()
 
-    val sorted = states.toList.sortBy(_.number)
-
     println(grammar.dump)
     println()
 
+    val sorted = states.toList.sortBy(_.index)
     for (state <- sorted) {
       println(state.dump)
     }
   }
 
   def main(args: Array[String]) {
-    val inputs = Seq(
+    debug()
+
+    /* val inputs = Seq(
       Tokens("x" -> x),
       Tokens("(" -> lparen, "x" -> x, "y" -> y, ")" -> rparen))
 
@@ -44,6 +45,6 @@ object parser {
       println("input:  " + input.mkString(" "))
       println("result: " + result)
       println()
-    }
+    } */
   }
 }

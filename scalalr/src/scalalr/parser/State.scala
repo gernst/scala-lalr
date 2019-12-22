@@ -9,16 +9,18 @@ import scalalr.util.NonTerminal
 import scalalr.util.Right
 import scalalr.util.Symbol
 import scalalr.util.Terminal
+import scalalr.util.Digraph
 
-case class Item(lhs: NonTerminal, rdone: List[Symbol], todo: List[Symbol], look: Set[Terminal]) {
+case class Item(lhs: NonTerminal, rdone: List[Symbol], todo: List[Symbol]) {
   def canReduce = todo.isEmpty
   def done = rdone.reverse
-  def core = Core(lhs, rdone, todo)
-  override def toString = lhs + " -> " + done.mkString(" ") + " . " + todo.mkString(" ") + look.mkString(" { ", " ", " }")
-}
-
-case class Core(lhs: NonTerminal, rdone: List[Symbol], todo: List[Symbol]) {
-  def done = rdone.reverse
+  
+  def successors(grammar: Grammar) = {
+    val rules = grammar index lhs
+    for(rule <- rules) yield {
+      Item(rule.lhs, Nil, rule.rhs)
+    }
+  }
   override def toString = lhs + " -> " + done.mkString(" ") + " . " + todo.mkString(" ")
 }
 
@@ -28,17 +30,20 @@ case class Core(lhs: NonTerminal, rdone: List[Symbol], todo: List[Symbol]) {
  *  Fields items, transitions, table are lazy to avoid excess computation for states that are not needed,
  *  and to defer computation until the state is complete and merged.
  */
-class State(val kernel: mutable.Set[Item], val prev: State, val grammar: Grammar) {
-  var number = 0
-  val core = kernel map (_.core)
-  val items = mutable.Set[Item]()
-  val transitions = mutable.Map[Symbol, State]()
-  val merged = mutable.Set[State]()
-  
-  def first = {
-    items collect { case Item(_, _, shift :: rest, _) => shift }
+case class State(kernel: Set[Item], prev: State, grammar: Grammar) {
+  lazy val items: Set[Item] = {
+    val result = Digraph.fix[Item](kernel, _ successors grammar)
+    result.toSet
   }
   
+  lazy val successors = {
+    
+  }
+
+  /* def first = {
+    items collect { case Item(_, _, shift :: rest) => shift }
+  }
+
   def succ = {
     transitions map { case (_, next) => next }
   }
@@ -144,7 +149,7 @@ class State(val kernel: mutable.Set[Item], val prev: State, val grammar: Grammar
 
   def merge(that: State): Boolean = {
     val changed = !(that.kernel subsetOf this.kernel)
-    
+
     println("merging")
     println(this.dump)
     println(that.dump)
@@ -165,7 +170,7 @@ class State(val kernel: mutable.Set[Item], val prev: State, val grammar: Grammar
 
     changed
   }
-  
+
   def recompute() {
     computeItems()
     computeTransitions()
@@ -229,5 +234,5 @@ class State(val kernel: mutable.Set[Item], val prev: State, val grammar: Grammar
       }
     }
     res
-  }
+  } */
 }

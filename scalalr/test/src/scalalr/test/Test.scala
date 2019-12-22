@@ -5,6 +5,7 @@ import scalalr.util._
 import scalalr.scanner.Letters
 import scalalr.parser.LALR
 
+/*
 object test {
   sealed trait Expr
   case class Id(name: String) extends Expr {
@@ -76,3 +77,4 @@ object test {
     println(result)
   }
 }
+*/

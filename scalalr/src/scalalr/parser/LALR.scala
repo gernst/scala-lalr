@@ -11,9 +11,12 @@ import scalalr.Token
 import scalalr.Tree
 import scalalr.WithRules
 import scalalr.util.NonTerminal
+import scalalr.util.Symbol
 import scalalr.util.Stack
 import scalalr.util.Terminal
 import scalalr.util.Timer
+import scalalr.util.Digraph
+import scalalr.util.Numbering
 
 sealed trait Action
 
@@ -26,7 +29,7 @@ case object Reject extends Action {
 }
 
 case class Shift(next: State) extends Action {
-  override def toString = "shift " + next.number
+  override def toString = "shift " + next
 }
 
 case class Reduce(rule: Rule) extends Action {
@@ -36,33 +39,82 @@ case class Reduce(rule: Rule) extends Action {
 case class Table(action: Map[Terminal, Action], goto: Map[NonTerminal, State]) {
 }
 
+case class Item(lhs: NonTerminal, rdone: List[Symbol], todo: List[Symbol]) {
+  def canReduce = todo.isEmpty
+  def done = rdone.reverse
+  override def toString = lhs + " -> " + done.mkString(" ") + " . " + todo.mkString(" ")
+}
+
+object State extends Numbering {
+
+}
+
+case class State(kernel: Set[Item]) extends State.numbered {
+  var items: Set[Item] = Set()
+  var transitions: Map[Symbol, State] = Map()
+
+  override def toString = "state " + index
+
+  def dump = {
+    var res = this + "\n"
+    for (item <- kernel) {
+      res += "  " + item + " *\n"
+    }
+    for (item <- items if !(kernel contains item)) {
+      res += "  " + item + "\n"
+    }
+    for ((symbol, next) <- transitions) {
+      symbol match {
+        case t: Terminal =>
+          res += "  shift " + t + " to " + next + "\n"
+        case n: NonTerminal =>
+          res += "  goto " + n + ": " + next + "\n"
+      }
+    }
+    res
+  }
+}
+
 object LALR {
   var debug = false
 
   def translate(init: Parser[_]): Grammar = {
-    val rules = mutable.ListBuffer[Rule]()
-
-    val done = mutable.Set[WithRules]()
-    val todo = mutable.Queue[WithRules]()
-
     val top = init match {
       case init: WithRules => init
       case _ => throw new IllegalArgumentException("not a top-level parser: " + init)
     }
-    todo enqueue top
 
-    while (!todo.isEmpty) {
-      val parser = todo.dequeue
-
-      if (!(done contains parser)) {
-        done += parser
-        for (other <- parser.other)
-          todo enqueue other
-        rules ++= parser.rules
-      }
-    }
+    val parsers = Digraph.fix[WithRules](List(top), _.other)
+    val rules = parsers flatMap (_.rules)
 
     Grammar(top.symbol, rules.toList)
+  }
+
+  def unfold(item: Item, grammar: Grammar) = item match {
+    case Item(_, _, (lhs: NonTerminal) :: rest) =>
+      val rules = grammar index lhs
+      rules map (_.item)
+    case _ =>
+      Nil
+  }
+
+  def next(items: Iterable[Item]): Map[Symbol, State] = {
+    val symbols = for (Item(lhs, rdone, first :: rest) <- items)
+      yield first
+
+    val transitions = for (symbol <- symbols) yield {
+      val kernel = for (Item(lhs, rdone, `symbol` :: rest) <- items)
+        yield Item(lhs, symbol :: rdone, rest)
+      symbol -> State(kernel.toSet)
+    }
+
+    transitions.toMap
+  }
+
+  def close(state: State, grammar: Grammar) {
+    val items = Digraph.fix[Item](state.kernel, unfold(_, grammar))
+    state.items = items.toSet
+    state.transitions = next(items)
   }
 
   /**
@@ -70,55 +122,22 @@ object LALR {
    *
    * Losely based on http://david.tribble.com/text/lrk_parsing.html
    */
-  def states(grammar: Grammar): (State, Seq[State]) = {
-    var number = 0
+  def states(grammar: Grammar): (State, Set[State]) = {
+    val start = Item(Start, List(), List(grammar.start))
+    val init = State(Set(start))
 
-    val incomplete = mutable.Queue[State]()
-    val states = mutable.Buffer[State]() // XXX: see whether caching by core is worthwile for larger grammars
-
-    val start = Item(Start, List(), List(grammar.start), Set(End))
-    val init = new State(mutable.Set(start), null, grammar)
-
-    incomplete enqueue init
-    timer.items { init.computeItems() }
-
-    while (!incomplete.isEmpty) {
-      val todo = mutable.Queue[State]()
-
-      if (!incomplete.isEmpty) {
-        val state = incomplete.dequeue
-        timer.transitions { state.computeTransitions() }
-        todo ++= state.succ
-        states += state
-      }
-
-      for (state <- todo) {
-        timer.items { state.computeItems() }
-        val that = states find (_.core == state.core)
-
-        that match {
-          case Some(that) /* if state canMerge that */ =>
-            val changed = timer.merge { that merge state }
-
-            if (changed) {
-              incomplete += that
-            }
-
-          case _ =>
-            number += 1
-            state.number = number
-            incomplete += state
-        }
-      }
+    def succ(state: State) = {
+      close(state, grammar)
+      state.transitions.values
     }
 
-    for (state <- states)
-      assert(state.table != null)
-
-    (init, states.distinct)
+    val result = Digraph.fix[State](List(init), succ)
+    (init, result.toSet)
   }
 
-  def reduce(a: Int => Any, rindex: List[Int], apply: Any) = (rindex, apply) match {
+  def parse(in: Iterator[Token], init: State, annotate: Boolean = false): Any = ???
+
+  /* def reduce(a: Int => Any, rindex: List[Int], apply: Any) = (rindex, apply) match {
     case (List(), f: Function0[Any] @unchecked) => f()
     case (List(i0), f: Function1[Any, Any] @unchecked) => f(a(i0))
     case (List(i1, i0), f: Function2[Any, Any, Any] @unchecked) => f(a(i0), a(i1))
@@ -196,5 +215,5 @@ object LALR {
           results push value
       }
     }
-  }
+  } */
 }

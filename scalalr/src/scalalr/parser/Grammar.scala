@@ -17,6 +17,7 @@ case class Rule(lhs: NonTerminal, rhs: List[Symbol], rindex: List[Int], apply: A
   def symbols = Set(lhs) ++ rhs
   def terminals = Set(rhs collect { case n: Terminal => n }: _*)
   def nonterminals = Set(lhs) ++ (rhs collect { case n: NonTerminal => n })
+  def item = Item(lhs, Nil, rhs)
 
   def prec: Int = { // yuck code, where is .findLast?
     val n = rhs.lastIndexWhere(_.isInstanceOf[Terminal])
@@ -36,6 +37,7 @@ case class Grammar(start: NonTerminal, rules: List[Rule]) {
   val symbols = Set(rules flatMap (_.symbols): _*)
   val terminals = Set(rules flatMap (_.terminals): _*)
   val nonterminals = Set(rules flatMap (_.nonterminals): _*)
+  val index = rules groupBy (_.lhs)
 
   /**
    * Nonterminals that can occur at the beginning of next,
@@ -44,7 +46,7 @@ case class Grammar(start: NonTerminal, rules: List[Rule]) {
    *  Used to compute the follow set for a potential reduction
    *  and thus to update the lookahead of items during closure.
    */
-  def first(next: List[Symbol], look: Set[Terminal], seen: Set[NonTerminal]): Set[Terminal] = next match {
+  /* def first(next: List[Symbol], look: Set[Terminal], seen: Set[NonTerminal]): Set[Terminal] = next match {
     case Nil =>
       look
     case (t: Terminal) :: _ =>
@@ -82,7 +84,7 @@ case class Grammar(start: NonTerminal, rules: List[Rule]) {
 
     val result = Digraph.digraph[X, A](states, init, succ)
     Set() ++ result(first)
-  }
+  } */
 
   def dump: String = {
     var res = ""
