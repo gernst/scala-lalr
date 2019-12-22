@@ -14,7 +14,7 @@ case object Start extends NonTerminal
 
 case class Rule(lhs: NonTerminal, rhs: List[Symbol], rindex: List[Int], apply: Any, collapse: Boolean) {
   def symbols = Set(lhs) ++ rhs
-  def terminals = Set() ++ (rhs collect { case n: Terminal => n })
+  def terminals = Set(rhs collect { case n: Terminal => n }: _*)
   def nonterminals = Set(lhs) ++ (rhs collect { case n: NonTerminal => n })
 
   def prec: Int = { // yuck code, where is .findLast?
@@ -31,10 +31,10 @@ object Rule {
 }
 
 case class Grammar(start: NonTerminal, rules: List[Rule]) {
-  val lhs = Set() ++ rules map (_.lhs)
-  val symbols = Set() ++ (rules flatMap (_.symbols))
-  val terminals = Set() ++ (rules flatMap (_.terminals))
-  val nonterminals = Set() ++ (rules flatMap (_.nonterminals))
+  val lhs = Set(rules map (_.lhs): _*)
+  val symbols = Set(rules flatMap (_.symbols): _*)
+  val terminals = Set(rules flatMap (_.terminals): _*)
+  val nonterminals = Set(rules flatMap (_.nonterminals): _*)
 
   /**
    * Nonterminals that can occur at the beginning of next,

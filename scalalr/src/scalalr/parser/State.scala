@@ -144,6 +144,11 @@ class State(val kernel: mutable.Set[Item], val prev: State, val grammar: Grammar
 
   def merge(that: State): Boolean = {
     val changed = !(that.kernel subsetOf this.kernel)
+    
+    println("merging")
+    println(this.dump)
+    println(that.dump)
+    if(changed) println("again " + this)
 
     this.kernel ++= that.kernel
     this.items ++= that.items
