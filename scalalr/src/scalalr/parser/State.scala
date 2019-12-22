@@ -142,7 +142,7 @@ class State(val kernel: mutable.Set[Item], val prev: State, val grammar: Grammar
     return true
   }
 
-  def merge(that: State): Boolean = {
+  def merge(that: State) {
     val changed = !(that.kernel subsetOf this.kernel)
 
     this.kernel ++= that.kernel
@@ -157,8 +157,6 @@ class State(val kernel: mutable.Set[Item], val prev: State, val grammar: Grammar
         that.prev.transitions(symbol) = this
       }
     }
-
-    changed
   }
   
   def recompute() {

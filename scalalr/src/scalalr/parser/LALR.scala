@@ -98,11 +98,7 @@ object LALR {
 
         that match {
           case Some(that) /* if state canMerge that */ =>
-            val changed = timer.merge { that merge state }
-
-            if (changed) {
-              incomplete += that
-            }
+            timer.merge { that merge state }
 
           case _ =>
             number += 1
