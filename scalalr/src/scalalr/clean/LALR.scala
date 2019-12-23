@@ -1,5 +1,7 @@
 package scalalr.clean
 
+import scala.collection.mutable
+
 sealed trait Symbol
 
 case class Terminal(name: String) extends Symbol {
@@ -27,14 +29,28 @@ case class Core(lhs: NonTerminal, rdone: List[Symbol], todo: List[Symbol]) {
   override def toString = lhs + " -> " + done.mkString(" ") + " . " + todo.mkString(" ")
 }
 
-case class Item(lhs: NonTerminal, rdone: List[Symbol], todo: List[Symbol], look: Set[Terminal]) {
+case class Item(lhs: NonTerminal, rdone: List[Symbol], todo: List[Symbol], look: Terminal) {
   def done = rdone.reverse
   def core = Core(lhs, rdone, todo)
-  override def toString = lhs + " -> " + done.mkString(" ") + " . " + todo.mkString(" ") + look.mkString(" { ", " ", " }")
+
+  def shift = todo match {
+    case Nil => None
+    case first :: rest => Some(first -> Item(lhs, first :: rdone, rest, look))
+  }
+
+  override def toString = lhs + " -> " + done.mkString(" ") + " . " + todo.mkString(" ") + " / " + look
 }
 
-case class State(kernel: Set[Item], items: Set[Item]) {
+case class Look(tail: List[Symbol], look: Set[Terminal]) {
+
+}
+
+case class State(kernel: Set[Item]) {
   def core = kernel map (_.core)
+  var prev: State = null
+  var items = Set[Item]()
+  var next = Map[Symbol, State]()
+  override def toString = items.mkString("\n")
 }
 
 class LALR(grammar: Grammar) {
@@ -44,48 +60,101 @@ class LALR(grammar: Grammar) {
     grammar.index
   }
 
-  val lift = {
-    Item(Start, List(), List(grammar.start), Set(End))
+  val top = {
+    Item(Start, Nil, List(grammar.start), End)
   }
 
-  val init = {
-    val kernel = Set(lift)
-    val items = close(kernel)
-    State(kernel, items)
+  def init = {
+    state(Set(top), null)
   }
 
-  object first extends Digraph[(List[Symbol], Set[Terminal]), Terminal] {
-    def of(symbols: List[Symbol], look: Set[Terminal]) = {
-      val seed = (symbols, look)
-      val result = apply(List(seed))
-      result(seed)
-    }
+  def state(kernel: Set[Item], prev: State) = {
+    val state = State(kernel)
+    state.prev = prev
+    state.items = close(kernel)
+    state
+  }
 
-    def init(s: (List[Symbol], Set[Terminal])) = s match {
-      case (Nil, look) => look
-      case ((t: Terminal) :: _, _) => Set(t)
-      case ((n: NonTerminal) :: _, _) => Set()
-    }
+  def transitions(items: Set[Item]): Map[Symbol, Set[Item]] = {
+    group(items flatMap (_.shift))
+  }
 
-    def succ(s: (List[Symbol], Set[Terminal])) = s match {
-      case (Nil, look) => List()
-      case ((t: Terminal) :: _, _) => List()
-      case ((n: NonTerminal) :: rest, look) =>
-        for (rhs <- rules(n)) yield {
-          (rhs ++ rest, look)
+  def merge(state: State, diff: Set[Item]) {
+    state.items ++= diff
+
+    for ((symbol, succ) <- transitions(diff)) {
+      val next = merge(state next symbol, succ)
+    }
+  }
+
+  def states(init: State) = {
+    val todo = mutable.Queue[State]()
+    val delay = mutable.Queue[(State, Set[Item])]()
+    var result = Map[Set[Core], State]()
+
+    todo += init
+    result += (init.core -> init)
+
+    while (!todo.isEmpty) {
+      val prev = todo.dequeue
+
+      for ((symbol, kernel) <- transitions(prev.items)) {
+        val that = state(kernel, prev)
+
+        result get that.core match {
+          case None =>
+            val next = that
+            prev.next += symbol -> next
+            result += next.core -> next
+            todo += next
+
+          case Some(next) =>
+            prev.next += symbol -> next
+            val diff = that.items -- next.items
+            delay += ((next, diff))
         }
+      }
     }
+    
+    for((state, diff) <- delay) {
+      merge(state, diff)
+    }
+
+    result.values
   }
 
   object close extends Fix[Item] {
     def succ(item: Item) = item match {
       case Item(_, rdone, (lhs: NonTerminal) :: rest, look) =>
-        val follow = first of (rest, look)
-        for (rhs <- rules(lhs)) yield {
-          Item(lhs, Nil, rhs, follow)
-        }
+        for (
+          rhs <- rules(lhs);
+          term <- first(rest, look)
+        ) yield Item(lhs, Nil, rhs, term)
       case _ =>
-        Set()
+        List()
+    }
+  }
+
+  object first extends Digraph[Look, Terminal] {
+    def apply(tail: List[Symbol], look: Terminal): Set[Terminal] = {
+      val start = Look(tail, Set(look))
+      val result = apply(Set(start))
+      result(start)
+    }
+
+    def init(s: Look): Iterable[Terminal] = s match {
+      case Look(Nil, look) => look
+      case Look((t: Terminal) :: _, _) => Set(t)
+      case Look((n: NonTerminal) :: _, _) => Set()
+    }
+
+    def succ(s: Look): Iterable[Look] = s match {
+      case Look(Nil, look) => List()
+      case Look((t: Terminal) :: _, _) => List()
+      case Look((n: NonTerminal) :: rest, look) =>
+        for (rhs <- rules(n)) yield {
+          Look(rhs ++ rest, look)
+        }
     }
   }
 }
@@ -112,7 +181,10 @@ object LALR {
 
   def main(args: Array[String]) {
     object lalr extends LALR(grammar)
-    lalr.init.items map println
+    val init = lalr.init
+    for (state <- lalr.states(init)) {
+      println(state)
+    }
   }
 
   def group[A, B](xs: Iterable[(A, B)]): Map[A, Set[B]] = {
@@ -179,7 +251,7 @@ object LALR {
           start(y)
 
           depth(x) = Math.min(depth(x), depth(y))
-          result(x) = result(x) union result(y)
+          result(x) ++= result(y)
         }
 
         if (depth(x) == d) {
